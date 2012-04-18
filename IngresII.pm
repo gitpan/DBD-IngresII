@@ -34,7 +34,7 @@ DBD::IngresII - DBI driver for Ingres database systems
     use DynaLoader ();
     @ISA = qw(DynaLoader);
 
-    $VERSION = '0.61';
+    $VERSION = '0.62';
     my $Revision = substr(q$Change: 18308 $, 8)/100;
 
     bootstrap DBD::IngresII $VERSION;
@@ -365,19 +365,19 @@ E.g.,
 
 local database
 
-  DBI->connect("DBI:Ingres:mydb", "me", "mypassword")
+  DBI->connect("DBI:IngresII:mydb", "me", "mypassword")
 
 =item *
 
 with options and no password
 
-  DBI->connect("DBI:Ingres:mydb;-Rmyrole/myrolepassword", "me")
+  DBI->connect("DBI:IngresII:mydb;-Rmyrole/myrolepassword", "me")
 
 =item *
 
 Ingres/Net database
 
-  DBI->connect("DBI:Ingres:thatnode::thisdb;-xw -l", "him", "hispassword")
+  DBI->connect("DBI:IngresII:thatnode::thisdb;-xw -l", "him", "hispassword")
 
 =back
 
