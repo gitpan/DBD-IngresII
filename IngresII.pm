@@ -13,7 +13,7 @@ DBD::IngresII - DBI driver for Ingres database systems
 
 =head1 SYNOPSIS
 
-    $dbh = DBI->connect("DBI:Ingres:$dbname", $user, $options, {AutoCommit=>0})
+    $dbh = DBI->connect("DBI:IngresII:$dbname", $user, $options, {AutoCommit=>0})
     $sth = $dbh->prepare($statement)
     $sth = $dbh->prepare($statement, {ing_readonly=>1})
     $sth->execute
@@ -34,7 +34,7 @@ DBD::IngresII - DBI driver for Ingres database systems
     use DynaLoader ();
     @ISA = qw(DynaLoader);
 
-    $VERSION = '0.62';
+    $VERSION = '0.63';
     my $Revision = substr(q$Change: 18308 $, 8)/100;
 
     bootstrap DBD::IngresII $VERSION;
