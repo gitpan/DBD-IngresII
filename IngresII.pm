@@ -34,7 +34,7 @@ DBD::IngresII - DBI driver for Ingres database systems
     use DynaLoader ();
     @ISA = qw(DynaLoader);
 
-    $VERSION = '0.60';
+    $VERSION = '0.61';
     my $Revision = substr(q$Change: 18308 $, 8)/100;
 
     bootstrap DBD::IngresII $VERSION;
@@ -342,9 +342,9 @@ DBD::IngresII.
 
 =head2 Connect
 
-  DBI->connect("DBI:Ingres:dbname[;options]");
-  DBI->connect("DBI:Ingres:dbname[;options]", user [, password]);
-  DBI->connect("DBI:Ingres:dbname[;options]", user [, password], \%attr);
+  DBI->connect("DBI:IngresII:dbname[;options]");
+  DBI->connect("DBI:IngresII:dbname[;options]", user [, password]);
+  DBI->connect("DBI:IngresII:dbname[;options]", user [, password], \%attr);
 
 To use DBD::IngresII call C<connect> specifying a I<datasource> option beginning
 with I<"DBI:Ingres:">, followed by the database instance name and

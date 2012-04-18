@@ -1,4 +1,4 @@
-v0.60     [TBA]
+v0.60     2012.04.18
  - Added PL_ prefix to Perl API functions so now DBD::IngresII can work under
    new Perls.
  - Added support for ANSIDATE
