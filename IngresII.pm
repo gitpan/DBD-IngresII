@@ -34,7 +34,7 @@ DBD::IngresII - DBI driver for Ingres database systems
     use DynaLoader ();
     @ISA = qw(DynaLoader);
 
-    $VERSION = '0.63';
+    $VERSION = '0.64';
     my $Revision = substr(q$Change: 18308 $, 8)/100;
 
     bootstrap DBD::IngresII $VERSION;
@@ -291,6 +291,8 @@ DBD::IngresII - DBI driver for Ingres database systems
     	    [ 'LONG BYTE',    DBI::SQL_LONGVARBINARY, 
 	      undef, undef, undef, undef, 1, 1, 0, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
             [ 'TIMESTAMP',    DBI::SQL_DATETIME,   
+	      undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+            [ 'TIME',    DBI::SQL_TIME,   
 	      undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
     	];
     	return $ti;

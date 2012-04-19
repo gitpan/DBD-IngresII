@@ -996,6 +996,11 @@ dbd_describe(sth, imp_sth)
 	    case IISQ_TSWO_TYPE:
 	    case IISQ_TSTMP_TYPE:
         case IISQ_ADTE_TYPE:
+        case IISQ_TMWO_TYPE:
+        case IISQ_TMW_TYPE:
+        case IISQ_TME_TYPE:
+        case IISQ_INYM_TYPE:
+        case IISQ_INDS_TYPE:
             if (var->sqltype == IISQ_DTE_TYPE)
 	            var->sqllen = IISQ_DTE_LEN;
             else if (var->sqltype == IISQ_TSW_TYPE)
@@ -1006,6 +1011,16 @@ dbd_describe(sth, imp_sth)
                 var->sqllen = IISQ_TSTMP_LEN;
             else if (var->sqltype == IISQ_ADTE_TYPE)
                 var->sqllen = IISQ_ADTE_LEN;
+            else if (var->sqltype == IISQ_TMWO_TYPE)
+                var->sqllen = IISQ_TMWO_LEN;
+            else if (var->sqltype == IISQ_TMW_TYPE)
+                var->sqllen = IISQ_TMW_LEN;
+            else if (var->sqltype == IISQ_TME_TYPE)
+                var->sqllen = IISQ_TME_LEN;
+            else if (var->sqltype == IISQ_INYM_TYPE)
+                var->sqllen = IISQ_INTYM_LEN;
+            else if (var->sqltype == IISQ_INDS_TYPE)
+                var->sqllen = IISQ_INTDS_LEN;
             /* FALLTHROUGH */
         case IISQ_CHA_TYPE:
         case IISQ_BYTE_TYPE:
@@ -1139,7 +1154,13 @@ dbd_bind_ph (sth, imp_sth, param, value, sql_type, attribs, is_inout, maxlen)
     case IISQ_TSTMP_TYPE:
     case IISQ_BYTE_TYPE:
     case IISQ_VBYTE_TYPE:
-	type = 3;
+    case IISQ_ADTE_TYPE:
+    case IISQ_TMWO_TYPE:
+    case IISQ_TMW_TYPE:
+    case IISQ_TME_TYPE:
+    case IISQ_INYM_TYPE:
+    case IISQ_INDS_TYPE:
+        type = 3;
     	break;
     case IISQ_LVCH_TYPE:
     case IISQ_LBYTE_TYPE:
@@ -1166,7 +1187,9 @@ dbd_bind_ph (sth, imp_sth, param, value, sql_type, attribs, is_inout, maxlen)
         case SQL_BINARY:
         case SQL_VARCHAR:
         case SQL_VARBINARY:
-	case SQL_DATE:
+        case SQL_DATE:
+        /* case SQL_DATETIME: it looks like it is the same as SQL_DATE*/
+        case SQL_TIME:
             type = 3; break;
         case SQL_LONGVARCHAR:
         case SQL_LONGVARBINARY:

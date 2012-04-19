@@ -111,7 +111,8 @@ my %testvals = (
     'BYTE'		=> "\3\0\2\1",
     'LONG VARCHAR'	=> "CcDd" x 4096,
     'LONG BYTE'		=> "Ee\0Ff\1Gg\2Hh\0" x 2048,
-    'TIMESTAMP'     => "1963-03-15 04:55:22.000100"
+    'TIMESTAMP'     => "1963-03-15 04:55:22.000100",
+    'TIME'          => "12:45:11"
 );
 
 my $types = $dbh->type_info_all();
