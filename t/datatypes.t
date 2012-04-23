@@ -99,20 +99,27 @@ ok($dbh->do( "DROP TABLE $testtable" ),
 #
 
 my %testvals = (
-    'SMALLINT'		=> 32511,
-    'INTEGER'		=> 1234567,
-    'MONEY'		=> 49711.39,
-    'FLOAT'		=> 3.1415926,
-    'ANSIDATE'		=> "1963-03-15",
-    'DECIMAL'		=> 98,
-    'VARCHAR'		=> "Apricot" x 3,
-    'BYTE VARYING'	=> "Ab\0" x 10,
-    'CHAR'		=> "AaBb",
-    'BYTE'		=> "\3\0\2\1",
-    'LONG VARCHAR'	=> "CcDd" x 4096,
-    'LONG BYTE'		=> "Ee\0Ff\1Gg\2Hh\0" x 2048,
-    'TIMESTAMP'     => "1963-03-15 04:55:22.000100",
-    'TIME'          => "12:45:11"
+    'SMALLINT'                       => 32511,
+    'INTEGER'                        => 1234567,
+    'MONEY'                          => 49711.39,
+    'FLOAT'                          => 3.1415926,
+    'ANSIDATE'                       => "1963-03-15",
+    'DECIMAL'                        => 98,
+    'VARCHAR'                        => "Apricot" x 3,
+    'BYTE VARYING'                   => "Ab\0" x 10,
+    'CHAR'                           => "AaBb",
+    'BYTE'                           => "\3\0\2\1",
+    'LONG VARCHAR'                   => "CcDd" x 4096,
+    'LONG BYTE'                      => "Ee\0Ff\1Gg\2Hh\0" x 2048,
+    'TIMESTAMP'                      => "1963-03-15 04:55:22.000100",
+    'TIMESTAMP WITH TIME ZONE'       => "2005-01-12 12:47:32.244561-04:00",
+    'TIMESTAMP WITH LOCAL TIME ZONE' => "2006-01-12 10:56:12.245562",
+    'TIME'                           => "12:45:11",
+    'TIME WITH TIME ZONE'            => "12:47:32-04:00",
+    'TIME WITH LOCAL TIME ZONE'      => "12:45:02",
+    'INTERVAL YEAR TO MONTH'         => "55-04",
+    'INTERVAL DAY TO SECOND'         => "-18 12:02:23"
+
 );
 
 my $types = $dbh->type_info_all();

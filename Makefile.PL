@@ -78,7 +78,7 @@ else {
             die q{
 You are using MSWin32 Perl with gcc compiler. You need libingres.a file,
 which you can download from: 
-http://dbdingresii.codeplex.com/wikipage?title=libingres.a
+http://community.actian.com/wiki/Libingres.a_for_MinGW
 Place it in $II_SYSTEM\\ingres\\lib and run DBD::IngresII installation again.
             }
         }

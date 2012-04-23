@@ -1190,6 +1190,8 @@ dbd_bind_ph (sth, imp_sth, param, value, sql_type, attribs, is_inout, maxlen)
         case SQL_DATE:
         /* case SQL_DATETIME: it looks like it is the same as SQL_DATE*/
         case SQL_TIME:
+        case SQL_INTERVAL_YEAR_TO_MONTH:
+        case SQL_INTERVAL_DAY_TO_SECOND:
             type = 3; break;
         case SQL_LONGVARCHAR:
         case SQL_LONGVARBINARY:

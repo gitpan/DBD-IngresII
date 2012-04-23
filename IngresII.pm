@@ -34,7 +34,7 @@ DBD::IngresII - DBI driver for Ingres database systems
     use DynaLoader ();
     @ISA = qw(DynaLoader);
 
-    $VERSION = '0.64';
+    $VERSION = '0.65';
     my $Revision = substr(q$Change: 18308 $, 8)/100;
 
     bootstrap DBD::IngresII $VERSION;
@@ -292,7 +292,19 @@ DBD::IngresII - DBI driver for Ingres database systems
 	      undef, undef, undef, undef, 1, 1, 0, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
             [ 'TIMESTAMP',    DBI::SQL_DATETIME,   
 	      undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+            [ 'TIMESTAMP WITH TIME ZONE',    DBI::SQL_DATETIME,   
+	      undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+            [ 'TIMESTAMP WITH LOCAL TIME ZONE',    DBI::SQL_DATETIME,   
+	      undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
             [ 'TIME',    DBI::SQL_TIME,   
+	      undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+            [ 'TIME WITH TIME ZONE',    DBI::SQL_TIME,   
+	      undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+            [ 'TIME WITH LOCAL TIME ZONE',    DBI::SQL_TIME,   
+	      undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+            [ 'INTERVAL YEAR TO MONTH',    DBI::SQL_INTERVAL_YEAR_TO_MONTH,   
+	      undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+            [ 'INTERVAL DAY TO SECOND',    DBI::SQL_INTERVAL_DAY_TO_SECOND,   
 	      undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
     	];
     	return $ti;
@@ -302,7 +314,7 @@ DBD::IngresII - DBI driver for Ingres database systems
         my ($dbh, $str) = @_;
         my ($new_str, @chars);
         
-        $str ||= '';
+        $str = '' unless defined $str;
         $new_str = '';
 
         warn 'Non-utf8 string passed to ->utf8_quote' unless utf8::is_utf8($str);
@@ -679,7 +691,31 @@ byte varying -> DBI::SQL_VARBINARY
 
 =item *
 
-date -> DBI::SQL_DATE
+ansidate -> DBI::SQL_DATE
+
+=item *
+
+timestamp -> DBI::SQL_DATETIME
+
+=item *
+
+timestamp with time zone -> DBI::SQL_DATETIME
+
+=item *
+
+timestamp with local time zone -> DBI::SQL_DATETIME
+
+=item *
+
+time -> DBI::SQL_TIME
+
+=item *
+
+time with time zone -> DBI::SQL_TIME
+
+=item *
+
+time with local time zone -> DBI::SQL_TIME
 
 =item *
 
@@ -696,6 +732,14 @@ long varchar -> DBI::SQL_LONGVARCHAR
 =item *
 
 long byte -> DBI::SQL_LONGVARBINARY
+
+=item *
+
+interval year to month -> DBI::SQL_INTERVAL_YEAR_TO_MONTH
+
+=item *
+
+interval day to second -> DBI::SQL_INTERVAL_DAY_TO_SECOND
 
 =back
 
@@ -807,6 +851,12 @@ returns just the newer version strings correctly, since I'm still looking
 for documentation for the older ones.
 
 I wonder if I have forgotten something?
+
+=head1 BAZAAR REPOSITORY
+
+You can access latest development version of DBD::IngresII using bzr:
+
+    bzr branch ftp://anonymous@xenu.tk/bzr/dbd-ingresii
 
 =head1 SEE ALSO
 
