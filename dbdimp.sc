@@ -1671,7 +1671,24 @@ dbd_st_FETCH_attrib(sth, imp_sth, keysv)
                 type = SQL_DOUBLE;
                 break;
             case IISQ_DTE_TYPE:
+            case IISQ_ADTE_TYPE:
                 type = SQL_DATE;
+                break;
+            case IISQ_TMWO_TYPE: 
+            case IISQ_TMW_TYPE:  
+            case IISQ_TME_TYPE:  
+                type = SQL_TIME;
+                break;
+            case IISQ_TSWO_TYPE: 
+            case IISQ_TSW_TYPE:  
+            case IISQ_TSTMP_TYPE:
+                type = SQL_DATETIME;
+                break;
+            case IISQ_INYM_TYPE:
+                type = SQL_INTERVAL_YEAR_TO_MONTH;
+                break;
+            case IISQ_INDS_TYPE:
+                type = SQL_INTERVAL_DAY_TO_SECOND;
                 break;
             case IISQ_CHA_TYPE:
             case IISQ_TXT_TYPE:
@@ -1686,12 +1703,12 @@ dbd_st_FETCH_attrib(sth, imp_sth, keysv)
             case IISQ_VBYTE_TYPE:
                 type = SQL_VARBINARY;
                 break;
-	    case IISQ_LVCH_TYPE:
-		type = SQL_LONGVARCHAR;
-		break;
-	    case IISQ_LBYTE_TYPE:
-		type = SQL_LONGVARBINARY;
-		break;
+	        case IISQ_LVCH_TYPE:
+		        type = SQL_LONGVARCHAR;
+		        break;
+	        case IISQ_LBYTE_TYPE:
+		        type = SQL_LONGVARBINARY;
+		        break;
             default:        /* oh dear! */
                 type = 0;
                 break;
@@ -1751,6 +1768,15 @@ dbd_st_FETCH_attrib(sth, imp_sth, keysv)
             case IISQ_VBYTE_TYPE:
             case IISQ_LBYTE_TYPE:
             case IISQ_LVCH_TYPE:
+    	    case IISQ_TSW_TYPE:
+	        case IISQ_TSWO_TYPE:
+	        case IISQ_TSTMP_TYPE:
+            case IISQ_ADTE_TYPE:
+            case IISQ_TMWO_TYPE:
+            case IISQ_TMW_TYPE:
+            case IISQ_TME_TYPE:
+            case IISQ_INYM_TYPE:
+            case IISQ_INDS_TYPE:
                 len = imp_sth->fbh[i].origlen;
                 break;
             default:        /* oh dear! */

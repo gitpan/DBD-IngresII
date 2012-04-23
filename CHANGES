@@ -1,3 +1,5 @@
+v0.66     TBD
+ - More type checking
 v0.65     2012.04.23
  - Now ->ing_utf8_quote behave properly when empty string is supplied.
  - Updated docs
