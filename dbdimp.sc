@@ -1035,6 +1035,15 @@ dbd_describe(sth, imp_sth)
             SvOK_off(fbh->sv);
             var->sqldata = SvPVX(fbh->sv);
             break;
+        case IISQ_NCHR_TYPE:
+        case IISQ_NVCHR_TYPE:
+            var->sqltype = IISQ_NVCHR_TYPE;
+            fbh->len = var->sqllen;
+            strcpy(fbh->type, "n");
+            fbh->sv = newSV((STRLEN)fbh->len);
+            SvOK_off(fbh->sv);
+            var->sqldata = SvPVX(fbh->sv);
+            break;
         case IISQ_LVCH_TYPE:
         case IISQ_LBYTE_TYPE: {
             IISQLHDLR *hdlr;
@@ -1160,6 +1169,8 @@ dbd_bind_ph (sth, imp_sth, param, value, sql_type, attribs, is_inout, maxlen)
     case IISQ_TME_TYPE:
     case IISQ_INYM_TYPE:
     case IISQ_INDS_TYPE:
+    case IISQ_NCHR_TYPE:
+    case IISQ_NVCHR_TYPE:
         type = 3;
     	break;
     case IISQ_LVCH_TYPE:
@@ -1476,6 +1487,17 @@ dbd_st_fetch(sth, imp_sth)
                         DBIc_has(imp_sth, DBIcf_ChopBlanks));
                 }
                 break; }
+            case 'n': {
+                short len = *(short *)var->sqldata;
+                char *buf = var->sqldata + sizeof(short);
+                sv_setpvn(sv, var->sqldata + sizeof(short), len * 2);
+                if (dbis->debug >= 3) {
+                    PerlIO_printf(DBILOGFP, "Text (UTF-16): '");
+                    PerlIO_write(DBILOGFP, buf, len);
+                    PerlIO_printf(DBILOGFP, "', Chop: %d\n",
+                        DBIc_has(imp_sth, DBIcf_ChopBlanks));
+                }
+                break; }
             case 'l':
                 if (!DBIc_has(imp_sth, DBIcf_LongTruncOk) && fbh->indic == 1) {
                     (void)SvOK_off(sv);
@@ -1694,6 +1716,10 @@ dbd_st_FETCH_attrib(sth, imp_sth, keysv)
             case IISQ_TXT_TYPE:
                 type = SQL_CHAR;
                 break;
+            case IISQ_NCHR_TYPE:
+                type = SQL_BINARY;
+            case IISQ_NVCHR_TYPE:
+                type = SQL_VARBINARY;
             case IISQ_VCH_TYPE:
                 type = SQL_VARCHAR;
                 break;

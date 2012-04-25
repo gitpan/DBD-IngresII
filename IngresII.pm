@@ -34,7 +34,7 @@ DBD::IngresII - DBI driver for Ingres database systems
     use DynaLoader ();
     @ISA = qw(DynaLoader);
 
-    $VERSION = '0.66';
+    $VERSION = '0.67';
     my $Revision = substr(q$Change: 18308 $, 8)/100;
 
     bootstrap DBD::IngresII $VERSION;
@@ -283,6 +283,10 @@ DBD::IngresII - DBI driver for Ingres database systems
     	    [ 'BYTE VARYING', DBI::SQL_VARBINARY,
 	      undef, "'","'", "max length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
     	    [ 'CHAR',         DBI::SQL_CHAR,   
+	      undef, "'","'", "length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+            [ 'NCHAR',         DBI::SQL_BINARY,   
+	      undef, "'","'", "length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+            [ 'NVARCHAR',      DBI::SQL_VARBINARY,   
 	      undef, "'","'", "length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
     	    [ 'BYTE',         DBI::SQL_BINARY, 
 	      undef, "'","'", "length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
@@ -675,6 +679,14 @@ char -> DBI::SQL_CHAR
 
 =item *
 
+nchar -> DBI::SQL_BINARY
+
+=item *
+
+nvarchar -> DBI::SQL_VARBINARY
+
+=item *
+
 text -> DBI::SQL_CHAR
 
 =item *
@@ -840,6 +852,26 @@ A solution is underway for support for procedure calls from the DBI.
 Until that is defined procedure calls can be implemented as a
 DB::Ingres-specific function (like L<get_event>) if the need arises and
 someone is willing to do it.
+
+=head1 UNICODE EXAMPLE
+
+    # Database must be created with "createdb -i dbname"
+
+    use utf8;
+
+    use Encode
+
+    my $dbh = DBI->connect("DBI:IngresII:dbname");
+    my $sth = $dbh->prepare("CREATE TABLE foobar (str nchar(10))");
+    $sth->execute;
+    $sth = $dbh->prepare("INSERT INTO foobar values (?)");
+    $sth->execute(encode('utf-8', 'ąść'));
+
+    $sth = $dbh->prepare("SELECT * FROM foobar");
+    $sth->execute;
+    my $hashref = $sth->fetchrow_hashref;
+
+    print encode('utf8', decode('utf-16le', $hashref->{str}));
 
 =head1 NOTES
 

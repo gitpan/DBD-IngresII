@@ -6,7 +6,7 @@ use DBI qw(:sql_types);
 use Test::Harness qw($verbose);
 require DBD::IngresII;
 
-my $num_test = 5 + ($#{DBD::IngresII::db->type_info_all()}) * 23;
+my $num_test = 5 + ($#{DBD::IngresII::db->type_info_all()} - 2) * 23;
 
 $verbose = $Test::Harness::verbose || 1;
 my $testtable = "testhththt";
@@ -131,6 +131,8 @@ for (my $i=1; $i <= $#{$types}; ++$i) {
     my $nullable = $types->[$i]->[$types->[0]->{NULLABLE}];
     my $params = $types->[$i]->[$types->[0]->{CREATE_PARAMS}];
     my $val = $testvals{$name};
+
+    next if (($name eq 'NCHAR') || ($name eq 'NVARCHAR'));
 
     unless ($val) {
 	warn "No default value for type $name\n";
