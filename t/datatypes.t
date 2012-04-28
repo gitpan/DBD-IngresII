@@ -30,7 +30,7 @@ sub get_dbname {
     # Should ask the user if it can't find a name.
     my $dbname = $ENV{DBI_DBNAME} || $ENV{DBI_DSN};
     if (defined $dbname && $dbname !~ /^dbi:IngresII/) {
-	$dbname = "dbi:IngresII:$dbname";
+	    $dbname = "dbi:IngresII:$dbname";
     }
     $dbname;
 }
@@ -51,9 +51,8 @@ sub connect_db ($) {
 
 my $dbname = get_dbname();
 
-if (!defined $dbname) {
-    warn "DBI_DBNAME and DBI_DSN aren't present";
-    print "1..0\n";
+unless (defined $dbname) {
+    print "1..0 # SKIP DBI_DBNAME and DBI_DSN aren't present\n";
     exit 0;
 }
 

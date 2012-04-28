@@ -28,8 +28,7 @@ sub get_dbname {
     # Should ask the user if it can't find a name.
     $dbname = $ENV{DBI_DBNAME} || $ENV{DBI_DSN};
     unless ($dbname) {
-        warn "DBI_DBNAME and DBI_DSN aren't present";
-        print "1..0\n";
+        print "1..0 # SKIP DBI_DBNAME and DBI_DSN aren't present\n";
         exit 0;
     }
     $dbname = "dbi:IngresII:$dbname" unless $dbname =~ /^dbi:IngresII/;

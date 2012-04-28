@@ -1,3 +1,6 @@
+v0.69     2012.04.28
+ - Small tests fix
+ - Unicode example is now explained little bit better
 v0.68     2012.04.26
  - Forgot to add nchar.t
 v0.67     2012.04.25

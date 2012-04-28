@@ -56,14 +56,12 @@ sub connect_db ($) {
 my $dbname = get_dbname();
 
 if (!defined $dbname) {
-    warn "DBI_DBNAME and DBI_DSN aren't present";
-    print "1..0\n";
+    print "1..0 # SKIP DBI_DBNAME and DBI_DSN aren't present\n";
     exit 0;
 }
 
 if (!$ENV{TEST_NCHAR}) {
-    warn "TEST_NCHAR isn't present";
-    print "1..0\n";
+    print "1..0 # SKIP TEST_NCHAR isn't present\n";
     exit 0;
 }
 

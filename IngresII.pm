@@ -34,7 +34,7 @@ DBD::IngresII - DBI driver for Ingres database systems
     use DynaLoader ();
     @ISA = qw(DynaLoader);
 
-    $VERSION = '0.68';
+    $VERSION = '0.69';
     my $Revision = substr(q$Change: 18308 $, 8)/100;
 
     bootstrap DBD::IngresII $VERSION;
@@ -856,7 +856,6 @@ someone is willing to do it.
 =head1 UNICODE EXAMPLE
 
     # Database must be created with "createdb -i dbname"
-
     use utf8;
 
     use Encode
@@ -865,7 +864,8 @@ someone is willing to do it.
     my $sth = $dbh->prepare("CREATE TABLE foobar (str nchar(10))");
     $sth->execute;
     $sth = $dbh->prepare("INSERT INTO foobar values (?)");
-    $sth->execute(encode('utf-8', 'ąść'));
+    $sth->execute(encode('utf-8', 'ąść')); # Instead of utf-8 use charset
+                                           # that is specified in II_CHARSET
 
     $sth = $dbh->prepare("SELECT * FROM foobar");
     $sth->execute;
