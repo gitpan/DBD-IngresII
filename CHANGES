@@ -1,3 +1,5 @@
+v0.71     2012.04.29
+ - Added =encoding utf8 to POD
 v0.70     2012.04.29
  - Fixed scalar allocation for NCHAR/NVARCHAR
  - Test are now more modern, no more ok() subs created by hand
