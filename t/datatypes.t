@@ -1,38 +1,20 @@
-#
-# Test various functions for each data type supported.
-#
+use strict;
+use warnings;
+use utf8;
 
+use Test::More;
+use DBD::IngresII;
 use DBI qw(:sql_types);
-use Test::Harness qw($verbose);
-require DBD::IngresII;
 
-my $num_test = 5 + ($#{DBD::IngresII::db->type_info_all()} - 2) * 23;
-
-$verbose = $Test::Harness::verbose || 1;
 my $testtable = "testhththt";
-my $t = 1;
-
-sub ok ($$) {
-    my ($ok, $expl) = @_;
-    print "Testing $expl\n" if $verbose;
-    ($ok) ? print "ok $t\n" : print "not ok $t\n";
-    if (!$ok && $warn) {
-	$warn = $DBI::errstr if $warn eq '1';
-	$warn = "" unless $warn;
-	warn "$expl $warn\n";
-    }
-    ++$t;
-    $ok;
-}
 
 sub get_dbname {
     # find the name of a database on which test are to be performed
-    # Should ask the user if it can't find a name.
     my $dbname = $ENV{DBI_DBNAME} || $ENV{DBI_DSN};
     if (defined $dbname && $dbname !~ /^dbi:IngresII/) {
 	    $dbname = "dbi:IngresII:$dbname";
     }
-    $dbname;
+    return $dbname;
 }
 
 sub connect_db ($) {
@@ -43,45 +25,38 @@ sub connect_db ($) {
 
     my $dbh = DBI->connect($dbname, "", "",
 		    { AutoCommit => 0, RaiseError => 0, PrintError => 1, ShowErrorStatement=>1 })
-	or return undef;
+	or die 'Unable to connect to database!';
     $dbh->{ChopBlanks} = 0;
 
-    $dbh;
+    return $dbh;
 }
 
 my $dbname = get_dbname();
 
+############################
+# BEGINNING OF TESTS       #
+############################
+
 unless (defined $dbname) {
-    print "1..0 # SKIP DBI_DBNAME and DBI_DSN aren't present\n";
-    exit 0;
+    plan skip_all => 'DBI_DBNAME and DBI_DSN aren\'t present';
+}
+else {
+    #plan tests => 4;
+    plan tests => (4 + ($#{DBD::IngresII::db->type_info_all()} - 2) * 23);
 }
 
-print "1..$num_test\n";
+my $dbh = connect_db($dbname);
 
-my $dbh;
-
-unless (ok($dbh = connect_db($dbname), "Connecting to database: $dbname")) {
-    while ($t <= $num_test) {
-	print "not ok $t # skipped\n";
-	++$t;
-    }
-    exit 0;
-}
-	
 #
 # Table creation/destruction.  Can't do much else if this isn't working.
 #
 eval { local $dbh->{RaiseError}=0;
        local $dbh->{PrintError}=0;
        $dbh->do("DROP TABLE $testtable"); };
-ok($dbh->do("CREATE TABLE $testtable(id INTEGER4 not null, name CHAR(64))"),
-      "Basic create table");
-ok($dbh->do("INSERT INTO $testtable VALUES(1, 'Alligator Descartes')"),
-      "Basic insert(value)");
-ok($dbh->do("DELETE FROM $testtable WHERE id = 1"),
-      "Basic Delete");
-ok($dbh->do( "DROP TABLE $testtable" ),
-      "Basic drop table");
+ok($dbh->do("CREATE TABLE $testtable(id INTEGER4 not null, name CHAR(64))"), "Basic create table");
+ok($dbh->do("INSERT INTO $testtable VALUES(1, 'Alligator Descartes')"), "Basic insert(value)");
+ok($dbh->do("DELETE FROM $testtable WHERE id = 1"), "Basic Delete");
+ok($dbh->do("DROP TABLE $testtable" ), "Basic drop table");
 
 #
 # For each supported data type, we need to test
@@ -123,31 +98,33 @@ my %testvals = (
 
 my $types = $dbh->type_info_all();
 
-for (my $i=1; $i <= $#{$types}; ++$i) {
-    my $name = $types->[$i]->[$types->[0]->{TYPE_NAME}];
-    my $sqltype = $types->[$i]->[$types->[0]->{DATA_TYPE}];
-    my $searchable = $types->[$i]->[$types->[0]->{SEARCHABLE}];
-    my $nullable = $types->[$i]->[$types->[0]->{NULLABLE}];
-    my $params = $types->[$i]->[$types->[0]->{CREATE_PARAMS}];
+for (1..$#{$types}) {
+    my $name = $types->[$_]->[$types->[0]->{TYPE_NAME}];
+    my $sqltype = $types->[$_]->[$types->[0]->{DATA_TYPE}];
+    my $searchable = $types->[$_]->[$types->[0]->{SEARCHABLE}];
+    my $nullable = $types->[$_]->[$types->[0]->{NULLABLE}];
+    my $params = $types->[$_]->[$types->[0]->{CREATE_PARAMS}];
     my $val = $testvals{$name};
+    my $cursor;
 
     next if (($name eq 'NCHAR') || ($name eq 'NVARCHAR'));
 
     unless ($val) {
-	warn "No default value for type $name\n";
-	next;
+	    die "No default value for type $name\n";
     }
 
     # Update the type based on the create params
     if ($params && $params =~ /max length/) {
-	$name .= "(2000)";
-    } elsif ($params && $params =~ /length/) {
-	$name .= "(64)";
-	$val = sprintf("%-64s", $val);
-    } elsif ($params && $params =~ /size=/) {
-	$params =~ s/.*size=([0-9,]*).*/$1/;
-	my @sizes = split(/,/, $params);
-	$name .= $sizes[-1];
+	    $name .= "(2000)";
+    }
+    elsif ($params && $params =~ /length/) {
+	    $name .= "(64)";
+	    $val = sprintf("%-64s", $val);
+    } 
+    elsif ($params && $params =~ /size=/) {
+	    $params =~ s/.*size=([0-9,]*).*/$1/;
+	    my @sizes = split(/,/, $params);
+	    $name .= $sizes[-1];
     }
 
     # CREATE TABLE OF APPROPRIATE TYPE
@@ -158,11 +135,11 @@ for (my $i=1; $i <= $#{$types}; ++$i) {
     ok($cursor = $dbh->prepare("INSERT INTO $testtable VALUES (?)"),
 	  "Insert prepare ($name)");
     {
-	# By allowing the bind param to go out of scope we make sure the driver
-	# has either copied it or has all its ref counting on it right.
-	my $destroyval = $val;
-	ok($cursor->bind_param(1, $destroyval, { TYPE => $sqltype }),
-	      "Insert bind param ($name)");
+    	# By allowing the bind param to go out of scope we make sure the driver
+    	# has either copied it or has all its ref counting on it right.
+    	my $destroyval = $val;
+    	ok($cursor->bind_param(1, $destroyval, { TYPE => $sqltype }),
+    	      "Insert bind param ($name)");
     }
     ok($cursor->execute,
 	  "Insert execute ($name)");
@@ -183,29 +160,28 @@ for (my $i=1; $i <= $#{$types}; ++$i) {
 
     # FETCH BOUND SELECTOR
     if ($searchable) {
-
-	ok($cursor = $dbh->prepare("SELECT * FROM $testtable WHERE val = ?"),
-	      "Select with bound selector prepare ($name)");
-	my $destroyval = $val;
-	ok($cursor->bind_param(1, $destroyval, { TYPE => $sqltype }),
-	      "Select with bound selector bind_param ($name)");
-	undef $destroyval;
-	ok($cursor->execute,
-	      "Select with bound selector execute ($name)");
-	$ar = $cursor->fetchrow_arrayref; 
-	ok($ar && "$ar->[0]" eq "$val",
-	      "Select with bound selector fetch ($name)")
-	    or print STDERR "Got '$ar->[0]', expected '$val'.\n";
-	ok($cursor->finish,
-	      "Select with bound selector finish ($name)");
+    	ok($cursor = $dbh->prepare("SELECT * FROM $testtable WHERE val = ?"),
+    	      "Select with bound selector prepare ($name)");
+    	my $destroyval = $val;
+    	ok($cursor->bind_param(1, $destroyval, { TYPE => $sqltype }),
+    	      "Select with bound selector bind_param ($name)");
+    	undef $destroyval;
+    	ok($cursor->execute,
+    	      "Select with bound selector execute ($name)");
+    	$ar = $cursor->fetchrow_arrayref; 
+    	ok($ar && "$ar->[0]" eq "$val",
+    	      "Select with bound selector fetch ($name)")
+    	    or print STDERR "Got '$ar->[0]', expected '$val'.\n";
+    	ok($cursor->finish,
+    	      "Select with bound selector finish ($name)");
     } else {
-	# These dummies make it easier to set num_tests.  We have to skip
-	# these tests because you can't select on some types.
-	ok(1, "Dummy test.");
-	ok(1, "Dummy test.");
-	ok(1, "Dummy test.");
-	ok(1, "Dummy test.");
-	ok(1, "Dummy test.");
+    	# These dummies make it easier to set num_tests.  We have to skip
+    	# these tests because you can't select on some types.
+    	ok(1, "Dummy test.");
+    	ok(1, "Dummy test.");
+    	ok(1, "Dummy test.");
+    	ok(1, "Dummy test.");
+    	ok(1, "Dummy test.");
     }
 
     # CLEAN UP FOR NULL STUFF
@@ -213,33 +189,33 @@ for (my $i=1; $i <= $#{$types}; ++$i) {
 
     # INSERT NULL VALUE
     if ($nullable) {
-	ok($cursor = $dbh->prepare("INSERT INTO $testtable VALUES (?)"),
-	      "Insert null prepare ($name)");
-	ok($cursor->bind_param(1, undef, { TYPE => $sqltype }),
-	      "Insert null bind param ($name)");
-	ok($cursor->execute,
-	      "Insert null execute ($name)");
-	ok($cursor->finish,
-	      "Insert null finish ($name)");
+    	ok($cursor = $dbh->prepare("INSERT INTO $testtable VALUES (?)"),
+    	      "Insert null prepare ($name)");
+    	ok($cursor->bind_param(1, undef, { TYPE => $sqltype }),
+    	      "Insert null bind param ($name)");
+    	ok($cursor->execute,
+    	      "Insert null execute ($name)");
+    	ok($cursor->finish,
+    	      "Insert null finish ($name)");
 
-	# SELECT NULL VALUE
-	ok($cursor = $dbh->prepare("SELECT val FROM $testtable"),
-	      "Select null prepare ($name)");
-	ok($cursor->execute,
-	      "Select null execute ($name)");
-	ok(!defined ($cursor->fetchrow_arrayref->[0]),
-	      "Select null fetch ($name)");
-	ok($cursor->finish,
-	      "Select null finish ($name)");
+    	# SELECT NULL VALUE
+    	ok($cursor = $dbh->prepare("SELECT val FROM $testtable"),
+    	      "Select null prepare ($name)");
+    	ok($cursor->execute,
+    	      "Select null execute ($name)");
+    	ok(!defined ($cursor->fetchrow_arrayref->[0]),
+    	      "Select null fetch ($name)");
+    	ok($cursor->finish,
+    	      "Select null finish ($name)");
     } else {
-	ok(1, "Dummy test.");
-	ok(1, "Dummy test.");
-	ok(1, "Dummy test.");
-	ok(1, "Dummy test.");
-	ok(1, "Dummy test.");
-	ok(1, "Dummy test.");
-	ok(1, "Dummy test.");
-	ok(1, "Dummy test.");
+    	ok(1, "Dummy test.");
+    	ok(1, "Dummy test.");
+    	ok(1, "Dummy test.");
+    	ok(1, "Dummy test.");
+    	ok(1, "Dummy test.");
+    	ok(1, "Dummy test.");
+    	ok(1, "Dummy test.");
+    	ok(1, "Dummy test.");
     }
 
     # DROP TABLE AGAIN

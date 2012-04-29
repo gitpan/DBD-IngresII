@@ -1,156 +1,138 @@
-#                              -*- Mode: Perl -*- 
-# Author          : Ulrich Pfeifer
-# Created On      : Mon Sep 22 09:07:49 1997
-# Last Modified By: Ulrich Pfeifer
-# Last Modified On: Mon Sep 22 11:36:03 1997
-# Language        : CPerl
-# 
+use strict;
+use warnings;
+use utf8;
 
-use DBI qw(:sql_types);
-$verbose   = 1;
-$testtable = "testhththt";
+use Test::More;
+use DBD::IngresII;
 
-$dbname = $ENV{DBI_DBNAME} || $ENV{DBI_DSN};
+my $testtable = "testhththt";
 
-unless ($dbname) {
-    print "1..0 # SKIP DBI_DBNAME and DBI_DSN aren't present\n";
-    exit 0;
+sub get_dbname {
+    # find the name of a database on which test are to be performed
+    my $dbname = $ENV{DBI_DBNAME} || $ENV{DBI_DSN};
+    if (defined $dbname && $dbname !~ /^dbi:IngresII/) {
+	    $dbname = "dbi:IngresII:$dbname";
+    }
+    return $dbname;
 }
 
-$dbname = "dbi:IngresII:$dbname" unless $dbname =~ /^dbi:IngresII/;
-print "1..17\n";
-my $test = 0;
+sub connect_db ($) {
+    # Connects to the database.
+    # If this fails everything else is in vain!
+    my ($dbname) = @_;
+    $ENV{II_DATE_FORMAT}="SWEDEN";       # yyyy-mm-dd
 
-$test++;
-print "Testing: DBI->connect('$dbname'):\n"
- 	if $verbose;
-( $dbh = DBI->connect($dbname) )
-    and print("ok $test\n") 
-    or die "not ok $test: $DBI::errstr\n";
-$dbh->{AutoCommit} = 0;
+    my $dbh = DBI->connect($dbname, "", "",
+		    { AutoCommit => 0, RaiseError => 0, PrintError => 1, ShowErrorStatement=>1 })
+	or die 'Unable to connect to database!';
+    $dbh->{ChopBlanks} = 0;
 
-sub run_test ($ ) {
-  my $cmd = shift;
-
-  $test++;
-  print "Testing: \$dbh->do( '$cmd' ):\n"
-    if $verbose;
-  ( $dbh->do( $cmd ) )
-    and print( "ok $test\n" )
-      or print "not ok $test: $DBI::errstr\n";
+    return $dbh;
 }
 
-sub run_test_prepare ($ ) {
-  my $cmd = shift;
-  my $cursor;
-  
-  $test++;
-  print "Testing: $cursor = \$dbh->prepare( '$cmd' ):\n"
-    if $verbose;
-  ( $cursor = $dbh->prepare( $cmd ) )
-    and print( "ok $test\n" )
-      or print "not ok $test: $DBI::errstr\n";
+my $dbname = get_dbname();
 
-  $test++;
-  print "Testing: $cursor \$cursor->execute:\n"
-	if $verbose;
-  ( $cursor and $cursor->execute )
-    and print( "ok $test\n" )
-      or print "not ok $test: $DBI::errstr\n";
+############################
+# BEGINNING OF TESTS       #
+############################
+
+unless (defined $dbname) {
+    plan skip_all => 'DBI_DBNAME and DBI_DSN aren\'t present';
+}
+else {
+    plan tests => 16;
 }
 
-run_test qq[
-           CREATE TABLE $testtable
-                       (
-                        id INTEGER4,
-                        name CHAR(64)
-                       )
-           ];
+my $dbh = connect_db($dbname);
+my $event;
 
-run_test q[
-           CREATE DBEVENT people_update
-          ];
+ok($dbh->do(qq[
+        CREATE TABLE $testtable (
+            id INTEGER4,
+            name CHAR(64)
+        )
+    ]),
+    "Testing $testtable table creation"
+);
 
-run_test q[
-           CREATE PROCEDURE signal_people ( the_id integer4 not NULL ) AS
-           DECLARE text VARCHAR(10) not NULL;
-           BEGIN
-           text = varchar(the_id);
-           RAISE DBEVENT people_update text ;
-           END
-          ];
 
-run_test qq[
-            CREATE RULE people_change
+ok($dbh->do(q[
+        CREATE DBEVENT people_update
+    ]),
+    'Testing people_update event creation'
+);
+
+ok($dbh->do(q[
+        CREATE PROCEDURE signal_people ( the_id integer4 not NULL ) AS
+            DECLARE text VARCHAR(10) not NULL;
+            BEGIN
+                text = varchar(the_id);
+                RAISE DBEVENT people_update text ;
+            END
+    ]),
+    'Testing signal_people procedure creation'
+);
+
+ok($dbh->do(qq[
+        CREATE RULE people_change
             AFTER INSERT OF $testtable
             EXECUTE PROCEDURE signal_people (the_id = $testtable.id)
-          ];
-run_test q[
-           REGISTER DBEVENT people_update
-          ];
-run_test qq[
-            INSERT INTO $testtable VALUES ( 1, 'Alligator Descartes' )
-           ];
+    ]),
+    'Testing people_change rule creation'
+);
 
-$test++;
-print "Committing\n"
-	if $verbose;
-( $dbh->commit )
-   and print "ok $test\n"
-   or print "not ok $test: $DBI::errstr\n";
+ok($dbh->do(q[
+        REGISTER DBEVENT people_update
+    ]),
+    'Testing dbevent people_update registration'
+);
 
-$test++;
-print "Testing \$dbh->func(10, 'get_dbevent')\n"
-	if $verbose;
-( $event = $dbh->func(10, 'get_dbevent') )
-   and print "ok $test\n"
-   or print "not ok $test: $DBI::errstr\n";
+ok($dbh->do(qq[
+        INSERT INTO $testtable VALUES ( 1, 'Alligator Descartes' )
+    ]),
+    "Testing insertion into $testtable"
+);
 
-for (keys %$event) {
-  printf "%-20s = '%s'\n", $_, $event->{$_};
-}
 
-run_test qq[
-            INSERT INTO $testtable VALUES ( 2, 'Ulrich Pfeifer' )
-           ];
+ok($dbh->commit, 'Commiting');
 
-$test++;
-print "Testing \$dbh->func('get_dbevent')\n"
-	if $verbose;
-( $event = $dbh->func('get_dbevent') )
-   and print "ok $test\n"
-   or print "not ok $test: $DBI::errstr\n";
+ok(($event = $dbh->func(10, 'get_dbevent')), "Testing \$dbh->func(10, 'get_dbevent')");
 
-for (keys %$event) {
-  printf "%-20s = '%s'\n", $_, $event->{$_};
-}
+ok($dbh->do(qq[
+        INSERT INTO $testtable VALUES ( 2, 'Ulrich Pfeifer' )
+    ]),
+    "Testing insertion into $testtable"
+);
+
+ok(($event = $dbh->func('get_dbevent')), "Testing \$dbh->func('get_dbevent')");
 
 # This one should time out
-$test++;
-print "Testing \$dbh->func(10, 'get_dbevent')\nThis one should time out after 10 seconds\n"
-	if $verbose;
-( $event = $dbh->func(10,'get_dbevent') )
-   and print "not ok $test\n"
-   or print "ok $test\n";
+ok(!($event = $dbh->func(10,'get_dbevent')), "Testing \$dbh->func(10, 'get_dbevent')");
 
-run_test qq[
-            DROP DBEVENT people_update
-           ];
-run_test qq[
-            DROP RULE people_change
-           ];
-run_test qq[
-            DROP PROCEDURE signal_people
-           ];
-run_test qq[
-            DROP TABLE $testtable
-           ];
+ok($dbh->do(qq[
+        DROP DBEVENT people_update
+    ]),
+    'Testing  droping people_update dbevent'
+);
 
-$test++;
-print "Committing\n"
-	if $verbose;
-( $dbh->commit )
-   and print "ok $test\n"
-   or print "not ok $test: $DBI::errstr\n";
-print "*** Testing of DBD::IngresII complete! You appear to be normal! ***\n"
-	if $verbose;
+ok($dbh->do(qq[
+        DROP RULE people_change
+    ]),
+    'Testing  droping people_change rule'
+);
+
+ok($dbh->do(qq[
+        DROP PROCEDURE signal_people
+    ]),
+    'Testing  droping signal_people procedure'
+);
+
+ok($dbh->do (qq[
+        DROP TABLE $testtable
+    ]),
+    "Testing  droping $testtable table"
+);
+
+ok($dbh->commit, 'Commiting');
+
+$dbh and $dbh->disconnect;

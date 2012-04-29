@@ -1,3 +1,7 @@
+v0.70     2012.04.29
+ - Fixed scalar allocation for NCHAR/NVARCHAR
+ - Test are now more modern, no more ok() subs created by hand
+ - Updated docs
 v0.69     2012.04.28
  - Small tests fix
  - Unicode example is now explained little bit better

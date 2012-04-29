@@ -1,42 +1,21 @@
-#
-# Test various functions for each data type supported.
-#
-
-use DBI qw(:sql_types);
-use Test::Harness qw($verbose);
-use Encode;
-
+use strict;
+use warnings;
 use utf8;
 
-require DBD::IngresII;
+use Test::More;
+use DBD::IngresII;
+use DBI;
+use Encode;
 
-my $num_test = 23;
-
-$verbose = $Test::Harness::verbose || 1;
-my $testtable = "testhththdft";
-my $t = 1;
-
-sub ok ($$) {
-    my ($ok, $expl) = @_;
-    print "Testing $expl\n" if $verbose;
-    ($ok) ? print "ok $t\n" : print "not ok $t\n";
-    if (!$ok && $warn) {
-	$warn = $DBI::errstr if $warn eq '1';
-	$warn = "" unless $warn;
-	warn "$expl $warn\n";
-    }
-    ++$t;
-    $ok;
-}
+my $testtable = 'asda';
 
 sub get_dbname {
     # find the name of a database on which test are to be performed
-    # Should ask the user if it can't find a name.
     my $dbname = $ENV{DBI_DBNAME} || $ENV{DBI_DSN};
     if (defined $dbname && $dbname !~ /^dbi:IngresII/) {
-	$dbname = "dbi:IngresII:$dbname";
+	    $dbname = "dbi:IngresII:$dbname";
     }
-    $dbname;
+    return $dbname;
 }
 
 sub connect_db ($) {
@@ -47,35 +26,37 @@ sub connect_db ($) {
 
     my $dbh = DBI->connect($dbname, "", "",
 		    { AutoCommit => 0, RaiseError => 0, PrintError => 1, ShowErrorStatement=>1 })
-	or return undef;
+	or die 'Unable to connect to database!';
     $dbh->{ChopBlanks} = 0;
 
-    $dbh;
+    return $dbh;
 }
+
+sub get_charset {
+    return($ENV{DBI_CHARSET} || 'utf-8'); 
+}
+
 
 my $dbname = get_dbname();
 
-if (!defined $dbname) {
-    print "1..0 # SKIP DBI_DBNAME and DBI_DSN aren't present\n";
-    exit 0;
+############################
+# BEGINNING OF TESTS       #
+############################
+
+unless (defined $dbname) {
+    plan skip_all => 'DBI_DBNAME and DBI_DSN aren\'t present';
 }
-
-if (!$ENV{TEST_NCHAR}) {
-    print "1..0 # SKIP TEST_NCHAR isn't present\n";
-    exit 0;
-}
-
-print "1..$num_test\n";
-
-my $dbh;
-
-unless (ok($dbh = connect_db($dbname), "Connecting to database: $dbname")) {
-    while ($t <= $num_test) {
-	print "not ok $t # skipped\n";
-	++$t;
+else {
+    unless ($ENV{TEST_NCHAR}) {
+        plan skip_all => 'TEST_NCHAR isn\'t present';
+        exit 0;
     }
-    exit 0;
+    plan tests => 22;
 }
+
+my $dbh = connect_db($dbname);
+my $charset = get_charset();
+my $cursor;
 
 #
 # Table creation/destruction.  Can't do much else if this isn't working.
@@ -92,8 +73,8 @@ ok($dbh->do("DELETE FROM $testtable WHERE id = 1"),
 ok($dbh->do( "DROP TABLE $testtable" ),
       "Basic drop table");
 
-my $data = encode('utf-8', 'ąść');
-my $data2 = encode('utf-8', 'śłź');
+my $data = encode($charset, 'ąść');
+my $data2 = encode($charset, 'śłź');
 
 
 # CREATE TABLE OF APPROPRIATE TYPE
@@ -123,3 +104,8 @@ ok($ar && $ar->[0] eq encode('utf-16le', 'śłź'), "Select fetch (NCHAR)")
 	or print STDERR "Got '" . encode('utf-8', decode('utf-16le', $ar->[0])) . "', expected '" . encode('utf-8', 'śłź') . "'.\n";
 ok($cursor->finish, "Select finish (NVARCHAR)");
 ok($dbh->do("DROP TABLE $testtable"), "Drop table (NVARCHAR)");
+
+$dbh and $dbh->commit;
+$dbh and $dbh->disconnect;
+	  
+exit(0);

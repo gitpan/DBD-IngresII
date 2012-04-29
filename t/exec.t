@@ -1,104 +1,86 @@
-# create table testtab
-# ( col1 integer not null primary key,
-#   col2 char(2)
-# );
+use strict;
+use warnings;
+use utf8;
+
+use Test::More;
+use DBD::IngresII;
 use DBI qw(:sql_types);
-my $num_test;
 
-$verbose = 1 unless defined $verbose;
 my $testtable = "testhththt";
-
-my $t = 0;
-sub ok ($$$;$) {
-    my ($n, $ok, $expl, $warn) = @_;
-    ++$t;
-    die "sequence error, expected $n but actually $t"
-	if $n and $n!=$t;
-    print "Testing $expl\n" if $verbose;
-    ($ok) ? print "ok $t\n" : print "not ok $t\n";
-    if (!$ok && $warn) {
-	$warn = $DBI::errstr if $warn eq '1';
-	$warn = "" unless $warn;
-	warn "$expl $warn\n";
-    }
-}
 
 sub get_dbname {
     # find the name of a database on which test are to be performed
-    # Should ask the user if it can't find a name.
-    $dbname = $ENV{DBI_DBNAME} || $ENV{DBI_DSN};
-    unless ($dbname) {
-        print "1..0 # SKIP DBI_DBNAME and DBI_DSN aren't present\n";
-        exit 0;
+    my $dbname = $ENV{DBI_DBNAME} || $ENV{DBI_DSN};
+    if (defined $dbname && $dbname !~ /^dbi:IngresII/) {
+	    $dbname = "dbi:IngresII:$dbname";
     }
-    $dbname = "dbi:IngresII:$dbname" unless $dbname =~ /^dbi:IngresII/;
-    $dbname;
+    return $dbname;
 }
 
-sub connect_db($$) {
+sub connect_db ($) {
     # Connects to the database.
     # If this fails everything else is in vain!
-    my ($num_test, $dbname) = @_;
+    my ($dbname) = @_;
+    $ENV{II_DATE_FORMAT}="SWEDEN";       # yyyy-mm-dd
 
-    print "Testing: DBI->connect('$dbname'):\n"
- 	if $verbose;
     my $dbh = DBI->connect($dbname, "", "",
-	{ AutoCommit => 0,
-	  PrintError => 0
-        });
-    $dbh->{ChopBlanks} = 1;
-    if ($dbh) {
-        print("1..$num_test\nok 1\n");
-    } else {
-        print("1..0\n");
-        warn("Cannot connect to database $dbname: $DBI::errstr\n");
-        exit 0;
-    }
-    $dbh;
+		    { AutoCommit => 0, RaiseError => 0, PrintError => 0, ShowErrorStatement=>0 })
+	or die 'Unable to connect to database!';
+    $dbh->{ChopBlanks} = 0;
+
+    return $dbh;
 }
 
-my $dbname = get_dbname;
+my $dbname = get_dbname();
 
-my $dbh = connect_db($num_test, $dbname);
-$t = 1;
+############################
+# BEGINNING OF TESTS       #
+############################
 
-ok(2, $dbh->do("CREATE TABLE $testtable( col1 integer not null primary key, col2 char(2))"),
-     "Create table", 1);
+unless (defined $dbname) {
+    plan skip_all => 'DBI_DBNAME and DBI_DSN aren\'t present';
+}
+else {
+    plan tests => 21;
+}
 
-ok(0, $sth = $dbh->prepare("insert into $testtable values (?,?)"), "prepare", 1);
+my $dbh = connect_db($dbname);
+my $sth;
 
-ok(0, $sth->bind_param(1,1,SQL_INTEGER), "bind 1-1", 1);
-ok(0, $sth->bind_param(2,'abc',SQL_CHAR), "bind 1-2", 1);
-ok(0, $sth->execute(), "execute 1", 1);
+ok($dbh->do("CREATE TABLE $testtable( col1 integer not null primary key, col2 char(2))"),
+     "Create table");
 
-                        # use same key now, so an error should raise....
-ok(0, $sth->bind_param(1,1,SQL_INTEGER), "bind 2-1", 1);
-ok(0, $sth->bind_param(2,'def',SQL_CHAR), "bind 2-2", 1);
-ok(0, !$sth->execute(), "execute 2", 1);
+ok($sth = $dbh->prepare("insert into $testtable values (?,?)"), "prepare");
 
-ok(0, $sth->bind_param(1,2,SQL_INTEGER), "bind 3-1");
-ok(0, $sth->bind_param(2,'abc',SQL_CHAR), "bind 3-2");
-ok(0, $sth->execute(), "execute 3");
+ok($sth->bind_param(1,1,SQL_INTEGER), "bind 1-1");
+ok($sth->bind_param(2,'abc',SQL_CHAR), "bind 1-2");
+ok($sth->execute(), "execute 1");
+
+# use same key now, so an error should raise....
+ok($sth->bind_param(1,1,SQL_INTEGER), "bind 2-1");
+ok($sth->bind_param(2,'def',SQL_CHAR), "bind 2-2");
+ok(!$sth->execute(), "execute 2");
+
+ok($sth->bind_param(1,2,SQL_INTEGER), "bind 3-1");
+ok($sth->bind_param(2,'abc',SQL_CHAR), "bind 3-2");
+ok($sth->execute(), "execute 3");
 
 # Now check that AutoCommit handling is OK
 # AutoCommit is 0:
-ok(0, $dbh->{AutoCommit} == 0, "AutoCommit should be 0", ",
-  is :".$dbh->{AutoCommit});
-ok(0, $dbh->{AutoCommit} = 1, "Set AutoCommit to 1", 1);
+ok($dbh->{AutoCommit} == 0, "AutoCommit should be 0");
+ok($dbh->{AutoCommit} = 1, "Set AutoCommit to 1");
 #Check that the data from "bind 1" is there
-ok(0, $dbh->do("UPDATE $testtable SET col1=4 WHERE col1=1")==1,
-	"Updating row (1,'abc')", 1);
-ok(0, ($dbh->{AutoCommit} = 0)  == 0, "Set AutoCommit to 0", 1);
+ok($dbh->do("UPDATE $testtable SET col1=4 WHERE col1=1")==1,
+    "Updating row (1,'abc')");
+ok(($dbh->{AutoCommit} = 0)  == 0, "Set AutoCommit to 0");
 #Change the row back again
-ok(0, $dbh->do("UPDATE $testtable SET col1=1 WHERE col1=4")==1,
-	"Updating row (4,'abc')", 1);
+ok($dbh->do("UPDATE $testtable SET col1=1 WHERE col1=4")==1, 
+    "Updating row (4,'abc')");
 # And set rollback-mode
-ok(0, $dbh->{ing_rollback}=1, "Ing_rollback set to 1", 1);
-ok(0, $dbh->{AutoCommit} = 1, "Set AutoCommit to 1", 1);
-ok(0, $dbh->do("UPDATE $testtable SET col1=1 WHERE col1=4")==1,
-	"Updating row (4,'abc') after rollback", 1);
+ok($dbh->{ing_rollback}=1, "Ing_rollback set to 1");
+ok($dbh->{AutoCommit} = 1, "Set AutoCommit to 1");
+ok($dbh->do("UPDATE $testtable SET col1=1 WHERE col1=4")==1,
+    "Updating row (4,'abc') after rollback");
 
-ok(0, $dbh->do( "DROP TABLE $testtable" ), "Dropping table", 1);
-ok(0, $dbh->disconnect(), "disconnect", 1);
-
-BEGIN { $num_test = 22; }
+ok($dbh->do( "DROP TABLE $testtable" ), "Dropping table");
+ok($dbh->disconnect(), "disconnect");

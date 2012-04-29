@@ -1,4 +1,4 @@
-DBD::Ingres --  an Ingres interface for Perl 5 using DBI.
+DBD::IngresII --  an Ingres interface for Perl 5 using DBI.
 
 This is the Database Driver for the Ingres family of database products.
 It requires Ingres 2006 (aka Ingres 9.0) or newer,
@@ -141,3 +141,4 @@ Original document: (c)Tim Bunce
 Amendments: (c)Alligator Descartes
 Further amendments: (c)Henrik Tougaard <htoug@cpan.org>
 Latest amendments: (c)Stefan Reddig <sreagle@cpan.org>
+Very latest amendments: (c)Tomasz Konojacki <xenu@poczta.onet.pl>

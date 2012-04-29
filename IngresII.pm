@@ -34,7 +34,7 @@ DBD::IngresII - DBI driver for Ingres database systems
     use DynaLoader ();
     @ISA = qw(DynaLoader);
 
-    $VERSION = '0.69';
+    $VERSION = '0.70';
     my $Revision = substr(q$Change: 18308 $, 8)/100;
 
     bootstrap DBD::IngresII $VERSION;
@@ -884,11 +884,12 @@ for documentation for the older ones.
 
 I wonder if I have forgotten something?
 
-=head1 BAZAAR REPOSITORY
+=head1 GIT REPOSITORY
 
-You can access latest development version of DBD::IngresII using bzr:
+You can access latest development version of DBD::IngresII on github:
 
-    bzr branch ftp://anonymous@xenu.tk/bzr/dbd-ingresii
+    https://github.com/xenu/dbd-ingresii
+
 
 =head1 SEE ALSO
 
