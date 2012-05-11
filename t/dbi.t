@@ -237,7 +237,7 @@ ok (${$href}{column_size} == 64, "column_info(column size)");
 #type_info
 # number of supported datatypes (supported by type_info, that means)
 my @type_info = $dbh->type_info(DBI::SQL_ALL_TYPES);
-ok (@type_info == 22, "type_info(count)");
+ok (@type_info == 23, "type_info(count)");
 $sth->finish;
 
 ok($dbh->do( "DROP TABLE $testtable" ), "Dropping table");

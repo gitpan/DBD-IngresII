@@ -5,7 +5,7 @@
 #   You may distribute under the terms of either the GNU General Public
 #   License or the Artistic License, as specified in the Perl README file.
 
-require 5.004;
+require 5.008_008;
 
 =head1 NAME
 
@@ -34,7 +34,7 @@ DBD::IngresII - DBI driver for Ingres database systems
     use DynaLoader ();
     @ISA = qw(DynaLoader);
 
-    $VERSION = '0.71';
+    $VERSION = '0.72';
     my $Revision = substr(q$Change: 18308 $, 8)/100;
 
     bootstrap DBD::IngresII $VERSION;
@@ -282,6 +282,8 @@ DBD::IngresII - DBI driver for Ingres database systems
 	      undef, "'","'", "max length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
     	    [ 'BYTE VARYING', DBI::SQL_VARBINARY,
 	      undef, "'","'", "max length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+    	    [ 'C',         DBI::SQL_CHAR,   
+	      undef, "'","'", "length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],      
     	    [ 'CHAR',         DBI::SQL_CHAR,   
 	      undef, "'","'", "length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
             [ 'NCHAR',         DBI::SQL_BINARY,   
@@ -674,6 +676,10 @@ float -> DBI::SQL_DOUBLE
 =item *
 
 double -> DBI::SQL_DOUBLE
+
+=item *
+
+c -> DBI::SQL_CHAR
 
 =item *
 

@@ -1022,6 +1022,7 @@ dbd_describe(sth, imp_sth)
             else if (var->sqltype == IISQ_INDS_TYPE)
                 var->sqllen = IISQ_INTDS_LEN;
             /* FALLTHROUGH */
+        case IISQ_CHR_TYPE:
         case IISQ_CHA_TYPE:
         case IISQ_BYTE_TYPE:
         case IISQ_TXT_TYPE:
@@ -1156,6 +1157,7 @@ dbd_bind_ph (sth, imp_sth, param, value, sql_type, attribs, is_inout, maxlen)
     case IISQ_MNY_TYPE:
     case IISQ_DEC_TYPE:
     case IISQ_CHA_TYPE:
+    case IISQ_CHR_TYPE:
     case IISQ_TXT_TYPE:
     case IISQ_VCH_TYPE:
     case IISQ_TSW_TYPE:
@@ -1472,6 +1474,7 @@ dbd_st_fetch(sth, imp_sth)
                 /* strip trailing blanks */
                 if ((fbh->origtype == IISQ_DTE_TYPE ||
                      fbh->origtype == IISQ_CHA_TYPE ||
+                     fbh->origtype == IISQ_CHR_TYPE ||
                      fbh->origtype == IISQ_TXT_TYPE)
                  && DBIc_has(imp_sth, DBIcf_ChopBlanks)) {
                     while (len > 0 && buf[len-1] == ' ') {
@@ -1713,6 +1716,7 @@ dbd_st_FETCH_attrib(sth, imp_sth, keysv)
                 type = SQL_INTERVAL_DAY_TO_SECOND;
                 break;
             case IISQ_CHA_TYPE:
+            case IISQ_CHR_TYPE:
             case IISQ_TXT_TYPE:
                 type = SQL_CHAR;
                 break;
@@ -1788,6 +1792,7 @@ dbd_st_FETCH_attrib(sth, imp_sth, keysv)
                 len = 24; /* size of a date */
                 break;
             case IISQ_CHA_TYPE:
+            case IISQ_CHR_TYPE:
             case IISQ_TXT_TYPE:
             case IISQ_VCH_TYPE:
             case IISQ_BYTE_TYPE:

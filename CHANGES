@@ -1,3 +1,7 @@
+v0.72     2012.05.11
+ - Now IngresII.pm requires Perl 5.8.8
+ - Updated README
+ - Added support for C type
 v0.71     2012.04.29
  - Added =encoding utf8 to POD
 v0.70     2012.04.29

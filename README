@@ -1,20 +1,32 @@
 DBD::IngresII --  an Ingres interface for Perl 5 using DBI.
 
 This is the Database Driver for the Ingres family of database products.
-It requires Ingres 2006 (aka Ingres 9.0) or newer,
-DBI 1.00 or newer, Perl5.6 or newer.
+It was tested under following platforms:
 
-For older versions of Ingres please use version 0.51 of this driver,
+    - Ingres 10.1 Community Build 121 + Windows + Visual C++ on x86
+    - Ingres 10.1 Community Build 121 + Windows + MinGW on x86
+    - Ingres 10.1 Community Build 121 + Windows + Visual C++ on x64
+    - Ingres 10.1 Community Build 121 + Windows + MinGW on x64
+    - Ingres 10.1 Community Build 121 + Linux + gcc on x86
+    - Ingres 10.1 Community Build 121 + Linux + gcc on x64
+
+It should work on other platforms, with Perl 5.8.8 and newer and Ingres
+9.2 and newer.
+
+For older versions of Ingres please use DBD::Ingres version 0.51,
 also available at CPAN.
 
-   Copyright (c) 1996,1997,1998,1999,2000  Henrik Tougaard <htoug@cpan.org>
-
-   You may distribute under the terms of either the GNU General Public
-   License or the Artistic License, as specified in the Perl README file.
+    Copyright (c) 1994,1995  Tim Bunce
+              (c) 1996,1997  Henrik Tougaard
+              (c) 2012       Tomasz Konojacki
+    
+    You may distribute under the terms of either the GNU General Public
+    License or the Artistic License, as specified in the Perl README file.
+    
 
 BEFORE BUILDING, TESTING AND INSTALLING this you will need to:
 
-    Build, test and install Perl 5.6 (or newer)
+    Build, test and install Perl 5.8.8 (or newer)
     It is very important to test it and install it!
 
     Build, test and install the DBI module.
@@ -25,15 +37,19 @@ BUILDING
 
     If Perl5 is installed do:
 
-	perl Makefile.PL
+    perl Makefile.PL
 
     If Perl5 is NOT installed install it, and come back here later!
 
     Then do:
 
-	make
-	DBI_DSN=<my-favourite-test-database> make test
-	make install
+    createdb -i test_database
+    make
+    export TEST_NCHAR=1
+    export DBI_CHARSET=<II_CHARSET>
+    export DBI_DSN=<my-favourite-test-database>
+    make test
+    make install
 
     HP-UX users (and others) will have to build perl with static
     extensions:
@@ -64,17 +80,17 @@ removing memory leaks.
 
 KNOWN PROBLEMS:
 
-	o sometime prepared statements don't work - they either give the
-	  wrong results, or they error out.
-	  The problem seems to have appeared with one of the later patches
-	  to Ingres...
-	  Work-around: reprepare the statement everytime round 8^{
+    o sometime prepared statements don't work - they either give the
+      wrong results, or they error out.
+      The problem seems to have appeared with one of the later patches
+      to Ingres...
+      Work-around: reprepare the statement everytime round 8^{
 
         o the arguments to &sql(connect) must be given in the order:
             database-name username other-options
           otherwise the check for username will fail.
 
-	o Problems have been reported on Digital Unix where the abflnk.opt
+    o Problems have been reported on Digital Unix where the abflnk.opt
           files does not include '-ldnet_stub'. This will cause wierd errors
           during "make test" - somewhat like:
 Can't load './blib/arch/auto/DBD/Ingres/Ingres.so' for module DBD::Ingres:
@@ -82,7 +98,7 @@ dlopen: Unresolved symbols at
 /usr/local/lib/perl5/alpha-dec_osf/5.00404/DynaLoader.pm line 166.
           include '-ldnet_stub' in your abflnk.opt to fix this.
 
-	o Lenio Eric <elenio@mct.rochester.edu> reports problems using
+    o Lenio Eric <elenio@mct.rochester.edu> reports problems using
           GNU-ld on SunOS. The problems disappeared when he reverted to
           Sun's ld. Message was: "ld.so: Undefined symbol: _IIGCa_static"
 
@@ -104,26 +120,27 @@ IF YOU HAVE PROBLEMS:
 Firstly, check the Frequently Asked Questions, Known Bugs and any other
 pertinent documents at:
 
-	http://dbi.perl.org/
+    http://dbi.perl.org/
 
 If this does *not* resolve your problem, please post details to
-dbi-users@perl.org (to subscribe mail to dbi-users-help@perl.org)
-and CC them to me at htoug@cpan.org
-(since version 0.60 and later please contact xenu@poczta.onet.pl instead)
+xenu@poczta.onet.pl or comp.databases.ingres newsgroup
 
 Please include:
 
 1. A complete log of a complete build, e.g.:
 
-	perl Makefile.PL -v           (do a make realclean first)
-	make
-	DBI_DSN=<database name> make test
-	DBI_TRACE=3 DBI_DSN=<database name> make test
+    createdb -i test_database
+    make
+    export TEST_NCHAR=1
+    export DBI_CHARSET=<II_CHARSET>
+    export DBI_DSN=<my-favourite-test-database>
+    export DBI_TRACE=3
+    make test
 
 2. Full details of which version of Ingres/esql and Perl you're using.
 
 3. The output of:
-	perl -e 'use Config; print Config::myconfig()'
+    perl -e 'use Config; print Config::myconfig()'
 
 4. If you get a core dump, try to include a stack trace from it.
    If the stack trace mentions XS_DynaLoader_dl_load_file then rerun
@@ -131,9 +148,6 @@ Please include:
    Similarly, get the Devel::CoreStack module and use it.
 
 5. Please don't post problems to comp.lang.perl.misc or perl5-porters.
-
-6. If you are not currently subscribed to the mailing list please
-   subscribe via dbi-users-help@perl.org
 
 
 
