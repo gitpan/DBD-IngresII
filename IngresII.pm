@@ -34,7 +34,7 @@ DBD::IngresII - DBI driver for Ingres database systems
     use DynaLoader ();
     @ISA = qw(DynaLoader);
 
-    $VERSION = '0.72';
+    $VERSION = '0.73';
     my $Revision = substr(q$Change: 18308 $, 8)/100;
 
     bootstrap DBD::IngresII $VERSION;
@@ -217,20 +217,22 @@ DBD::IngresII - DBI driver for Ingres database systems
         my ($dbh, $ident) = @_;
 	my $info = '';
 	return unless $ident;
-	if ($ident == 17 ) { return "Ingres"; }
-	elsif ($ident == 18) { $info = "_version"; }
-	elsif ($ident == 29) { return "'"; }
-	elsif ($ident == 41) { return "."; }
+	if ($ident == 17 ) { return 'Ingres'; }
+	elsif ($ident == 18) { $info = '_version'; }
+	elsif ($ident == 29) { return q{'}; }
+	elsif ($ident == 41) { return '.'; }
 	else { return; }
 	my $sth = $dbh->prepare("SELECT dbmsinfo('$info')");
         return unless $sth;
         $sth->execute;
 	my $version = $sth->fetchrow;
-	if ($version =~ /II 9\.3\.0/) { return "9.3"; }
-	elsif ($version =~ /II 9\.2\.0/) { return "2006 R3"; }
-	elsif ($version =~ /II 9\.1\.0/) { return "2006 R2"; }
-	elsif ($version =~ /II 9\.0\.4/) { return "2006"; }
-	else { return "unknown";}
+	if ($version =~ /II 10\.1\.0/) { return '10.1'; }
+    elsif  ($version =~ /II 10\.0\.0/) { return '10.0'; }
+    elsif ($version =~ /II 9\.3\.0/) { return '9.3'; }
+	elsif ($version =~ /II 9\.2\.0/) { return '2006 R3'; }
+	elsif ($version =~ /II 9\.1\.0/) { return '2006 R2'; }
+	elsif ($version =~ /II 9\.0\.4/) { return '2006'; }
+	else { return 'unknown';}
 #	return $version;
     }
 
@@ -239,7 +241,7 @@ DBD::IngresII - DBI driver for Ingres database systems
         my($dbh) = @_;
         # we know that DBD::IngresII prepare does a describe so this will
         # actually talk to the server and is this a valid and cheap test.
-        return 1 if $dbh->prepare("select * from iitables");
+        return 1 if $dbh->prepare('select * from iitables');
         return 0;
     }
 
@@ -280,6 +282,8 @@ DBD::IngresII - DBI driver for Ingres database systems
 	      undef, "","", "precision,scale", 1, 0, 2, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
     	    [ 'VARCHAR',      DBI::SQL_VARCHAR,
 	      undef, "'","'", "max length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+    	    [ 'BOOLEAN',      DBI::SQL_INTEGER,
+	      undef, "","", undef, 1, 0, 2, 0, 0 ,0 ,undef ,0 ,0, undef, undef, undef, undef ],
     	    [ 'BYTE VARYING', DBI::SQL_VARBINARY,
 	      undef, "'","'", "max length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
     	    [ 'C',         DBI::SQL_CHAR,   
@@ -330,7 +334,7 @@ DBD::IngresII - DBI driver for Ingres database systems
 
         for (@chars) {
             if ($_ !~ /^[[:ascii:]]$/) {
-                $new_str .= sprintf "\\+%06x", ord $_;
+                $new_str .= sprintf '\\+%06x', ord $_;
             }
             else {
                 $new_str .= $_;
@@ -651,6 +655,10 @@ Either of the two long datatypes, long varchar or long byte.
 
 All other supported types, i.e., char, varchar, text, date etc.
 
+=item 'n': UTF-16 string
+
+UTF-16 types - nchar or nvarchar.
+
 =back
 
 =head2 Ingres Types and their DBI Equivalents
@@ -676,6 +684,10 @@ float -> DBI::SQL_DOUBLE
 =item *
 
 double -> DBI::SQL_DOUBLE
+
+=item *
+
+boolean -> DBI::SQL_BOOLEAN
 
 =item *
 

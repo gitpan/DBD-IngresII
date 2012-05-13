@@ -1,3 +1,8 @@
+v0.73     2012.05.13
+ - Fixed useless interpolation
+ - get_info() now knows about Ingres 10.x
+ - Updated documentation
+ - Added (experimental) BOOLEAN support
 v0.72     2012.05.11
  - Now IngresII.pm requires Perl 5.8.8
  - Updated README

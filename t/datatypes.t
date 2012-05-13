@@ -6,7 +6,7 @@ use Test::More;
 use DBD::IngresII;
 use DBI qw(:sql_types);
 
-my $testtable = "testhththt";
+my $testtable = 'testhththt';
 
 sub get_dbname {
     # find the name of a database on which test are to be performed
@@ -21,9 +21,9 @@ sub connect_db ($) {
     # Connects to the database.
     # If this fails everything else is in vain!
     my ($dbname) = @_;
-    $ENV{II_DATE_FORMAT}="SWEDEN";       # yyyy-mm-dd
+    $ENV{II_DATE_FORMAT}='SWEDEN';       # yyyy-mm-dd
 
-    my $dbh = DBI->connect($dbname, "", "",
+    my $dbh = DBI->connect($dbname, '', '',
 		    { AutoCommit => 0, RaiseError => 0, PrintError => 1, ShowErrorStatement=>1 })
 	or die 'Unable to connect to database!';
     $dbh->{ChopBlanks} = 0;
@@ -77,23 +77,24 @@ my %testvals = (
     'INTEGER'                        => 1234567,
     'MONEY'                          => 49711.39,
     'FLOAT'                          => 3.1415926,
-    'ANSIDATE'                       => "1963-03-15",
+    'ANSIDATE'                       => '1963-03-15',
     'DECIMAL'                        => 98,
-    'VARCHAR'                        => "Apricot" x 3,
+    'VARCHAR'                        => 'Apricot' x 3,
     'BYTE VARYING'                   => "Ab\0" x 10,
+    'BOOLEAN'                        => 1,
     'C'                              => 'aBc',
-    'CHAR'                           => "AaBb",
+    'CHAR'                           => 'AaBb',
     'BYTE'                           => "\3\0\2\1",
-    'LONG VARCHAR'                   => "CcDd" x 4096,
+    'LONG VARCHAR'                   => 'CcDd' x 4096,
     'LONG BYTE'                      => "Ee\0Ff\1Gg\2Hh\0" x 2048,
-    'TIMESTAMP'                      => "1963-03-15 04:55:22.000100",
-    'TIMESTAMP WITH TIME ZONE'       => "2005-01-12 12:47:32.244561-04:00",
-    'TIMESTAMP WITH LOCAL TIME ZONE' => "2006-01-12 10:56:12.245562",
-    'TIME'                           => "12:45:11",
-    'TIME WITH TIME ZONE'            => "12:47:32-04:00",
-    'TIME WITH LOCAL TIME ZONE'      => "12:45:02",
-    'INTERVAL YEAR TO MONTH'         => "55-04",
-    'INTERVAL DAY TO SECOND'         => "-18 12:02:23"
+    'TIMESTAMP'                      => '1963-03-15 04:55:22.000100',
+    'TIMESTAMP WITH TIME ZONE'       => '2005-01-12 12:47:32.244561-04:00',
+    'TIMESTAMP WITH LOCAL TIME ZONE' => '2006-01-12 10:56:12.245562',
+    'TIME'                           => '12:45:11',
+    'TIME WITH TIME ZONE'            => '12:47:32-04:00',
+    'TIME WITH LOCAL TIME ZONE'      => '12:45:02',
+    'INTERVAL YEAR TO MONTH'         => '55-04',
+    'INTERVAL DAY TO SECOND'         => '-18 12:02:23'
 
 );
 
@@ -116,11 +117,11 @@ for (1..$#{$types}) {
 
     # Update the type based on the create params
     if ($params && $params =~ /max length/) {
-	    $name .= "(2000)";
+	    $name .= '(2000)';
     }
     elsif ($params && $params =~ /length/) {
-	    $name .= "(64)";
-	    $val = sprintf("%-64s", $val);
+	    $name .= '(64)';
+	    $val = sprintf('%-64s', $val);
     } 
     elsif ($params && $params =~ /size=/) {
 	    $params =~ s/.*size=([0-9,]*).*/$1/;
@@ -178,11 +179,11 @@ for (1..$#{$types}) {
     } else {
     	# These dummies make it easier to set num_tests.  We have to skip
     	# these tests because you can't select on some types.
-    	ok(1, "Dummy test.");
-    	ok(1, "Dummy test.");
-    	ok(1, "Dummy test.");
-    	ok(1, "Dummy test.");
-    	ok(1, "Dummy test.");
+    	ok(1, 'Dummy test.');
+    	ok(1, 'Dummy test.');
+    	ok(1, 'Dummy test.');
+    	ok(1, 'Dummy test.');
+    	ok(1, 'Dummy test.');
     }
 
     # CLEAN UP FOR NULL STUFF
@@ -209,14 +210,14 @@ for (1..$#{$types}) {
     	ok($cursor->finish,
     	      "Select null finish ($name)");
     } else {
-    	ok(1, "Dummy test.");
-    	ok(1, "Dummy test.");
-    	ok(1, "Dummy test.");
-    	ok(1, "Dummy test.");
-    	ok(1, "Dummy test.");
-    	ok(1, "Dummy test.");
-    	ok(1, "Dummy test.");
-    	ok(1, "Dummy test.");
+    	ok(1, 'Dummy test.');
+    	ok(1, 'Dummy test.');
+    	ok(1, 'Dummy test.');
+    	ok(1, 'Dummy test.');
+    	ok(1, 'Dummy test.');
+    	ok(1, 'Dummy test.');
+    	ok(1, 'Dummy test.');
+    	ok(1, 'Dummy test.');
     }
 
     # DROP TABLE AGAIN

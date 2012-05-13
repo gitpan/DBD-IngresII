@@ -972,6 +972,14 @@ dbd_describe(sth, imp_sth)
          * SVs and definitely not passed back to perl at any stage. */
 
         switch (var->sqltype) {
+        case IISQ_BOO_TYPE:
+            var->sqltype = IISQ_BOO_TYPE;
+            fbh->len = var->sqllen = sizeof(int);
+            strcpy(fbh->type, "d");
+            fbh->sv = newSV((STRLEN)fbh->len);
+            SvOK_off(fbh->sv);
+            var->sqldata = (char *)SvPVX(fbh->sv);
+            break;
         case IISQ_INT_TYPE:
             var->sqltype = IISQ_INT_TYPE;
             fbh->len = var->sqllen = sizeof(IV);
@@ -1147,6 +1155,7 @@ dbd_bind_ph (sth, imp_sth, param, value, sql_type, attribs, is_inout, maxlen)
     //SRE: already got type by DESCRIBE INPUT
     //TODO: clean out earlier workaround
     switch (abs(var->sqltype)) {
+    case IISQ_BOO_TYPE:
     case IISQ_INT_TYPE:
         type = 1;
         break;
@@ -1236,11 +1245,19 @@ dbd_bind_ph (sth, imp_sth, param, value, sql_type, attribs, is_inout, maxlen)
          * don't have to worry about the 0 case. */
 	/* addition: now you have to :( */
     case 1: /* int */
+        if ((var->sqltype = IISQ_BOO_TYPE) || (var->sqltype = -IISQ_BOO_TYPE)) {
+            var->sqllen = sizeof(int);
+            Renew(var->sqldata, var->sqllen, char);
+            if (SvOK(value))
+                *(int *)var->sqldata = (int)SvIV(value);
+        }
+        else {
+            var->sqllen = sizeof(IV);
+            Renew(var->sqldata, var->sqllen, char);
+            if (SvOK(value))
+                *(IV *)var->sqldata = SvIV(value);
+        }
         var->sqltype = IISQ_INT_TYPE;
-        var->sqllen = sizeof(IV);
-        Renew(var->sqldata, var->sqllen, char);
-        if (SvOK(value))
-            *(IV *)var->sqldata = SvIV(value);
         break;
     case 2: /* float */
         var->sqltype = IISQ_FLT_TYPE;
@@ -1458,7 +1475,10 @@ dbd_st_fetch(sth, imp_sth)
         } else {
             switch (fbh->type[0]) {
             case 'd':
-                sv_setiv(sv, *(IV*)var->sqldata);
+                if ((var->sqltype == IISQ_BOO_TYPE) || (var->sqltype == -IISQ_BOO_TYPE))
+                    sv_setiv(sv, *(int*)var->sqldata);
+                else
+                    sv_setiv(sv, *(IV*)var->sqldata);
                 if (dbis->debug >= 3)
                     PerlIO_printf(DBILOGFP, "Int: %ld %ld\n",
                           SvIV(sv), *(IV*)var->sqldata);
@@ -1684,6 +1704,9 @@ dbd_st_FETCH_attrib(sth, imp_sth, keysv)
         while(--i >= 0) {
             int type;
             switch (imp_sth->fbh[i].origtype) {
+            case IISQ_BOO_TYPE:
+                type = SQL_BOOLEAN;
+                break;
             case IISQ_INT_TYPE:
                 type = SQL_INTEGER;
                 /* Note should probably be others based on length */
@@ -1762,6 +1785,8 @@ dbd_st_FETCH_attrib(sth, imp_sth, keysv)
         while(--i >= 0) {
             int len;
             switch (imp_sth->fbh[i].origtype) {
+            case IISQ_BOO_TYPE:
+                len = 1;
             case IISQ_INT_TYPE:
                 switch (imp_sth->fbh[i].origlen) {
                 case 1:

@@ -19,7 +19,7 @@ sub connect_db ($) {
     # Connects to the database.
     # If this fails everything else is in vain!
     my ($dbname) = @_;
-    $ENV{II_DATE_FORMAT}="SWEDEN";       # yyyy-mm-dd
+    $ENV{II_DATE_FORMAT}='SWEDEN';       # yyyy-mm-dd
 
     my $dbh = DBI->connect($dbname, "", "",
 		    { AutoCommit => 0, RaiseError => 0, PrintError => 1, ShowErrorStatement=>1 })
@@ -44,7 +44,7 @@ else {
 
 my $dbh = connect_db($dbname);
 
-ok(($dbh->ing_utf8_quote(q{ąść'}) eq q{U&'\+000105\+00015b\+000107'''}), "Testing UTF-8 quoting");
+ok(($dbh->ing_utf8_quote(q{ąść'}) eq q{U&'\+000105\+00015b\+000107'''}), 'Testing UTF-8 quoting');
 
 $dbh and $dbh->commit;
 $dbh and $dbh->disconnect;

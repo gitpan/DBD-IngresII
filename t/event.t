@@ -5,7 +5,7 @@ use utf8;
 use Test::More;
 use DBD::IngresII;
 
-my $testtable = "testhththt";
+my $testtable = 'testhththt';
 
 sub get_dbname {
     # find the name of a database on which test are to be performed
@@ -20,9 +20,9 @@ sub connect_db ($) {
     # Connects to the database.
     # If this fails everything else is in vain!
     my ($dbname) = @_;
-    $ENV{II_DATE_FORMAT}="SWEDEN";       # yyyy-mm-dd
+    $ENV{II_DATE_FORMAT}='SWEDEN';       # yyyy-mm-dd
 
-    my $dbh = DBI->connect($dbname, "", "",
+    my $dbh = DBI->connect($dbname, '', '',
 		    { AutoCommit => 0, RaiseError => 0, PrintError => 1, ShowErrorStatement=>1 })
 	or die 'Unable to connect to database!';
     $dbh->{ChopBlanks} = 0;
@@ -109,19 +109,19 @@ ok(($event = $dbh->func('get_dbevent')), "Testing \$dbh->func('get_dbevent')");
 # This one should time out
 ok(!($event = $dbh->func(10,'get_dbevent')), "Testing \$dbh->func(10, 'get_dbevent')");
 
-ok($dbh->do(qq[
+ok($dbh->do(q[
         DROP DBEVENT people_update
     ]),
     'Testing  droping people_update dbevent'
 );
 
-ok($dbh->do(qq[
+ok($dbh->do(q[
         DROP RULE people_change
     ]),
     'Testing  droping people_change rule'
 );
 
-ok($dbh->do(qq[
+ok($dbh->do(q[
         DROP PROCEDURE signal_people
     ]),
     'Testing  droping signal_people procedure'
