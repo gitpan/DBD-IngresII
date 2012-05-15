@@ -1,3 +1,6 @@
+v0.74     2012.05.15
+ - Created ->ing_bool_to_str method
+ - Created ->ing_norm_bool method
 v0.73     2012.05.13
  - Fixed useless interpolation
  - get_info() now knows about Ingres 10.x

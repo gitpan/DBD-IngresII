@@ -34,7 +34,7 @@ DBD::IngresII - DBI driver for Ingres database systems
     use DynaLoader ();
     @ISA = qw(DynaLoader);
 
-    $VERSION = '0.73';
+    $VERSION = '0.74';
     my $Revision = substr(q$Change: 18308 $, 8)/100;
 
     bootstrap DBD::IngresII $VERSION;
@@ -59,6 +59,8 @@ DBD::IngresII - DBI driver for Ingres database systems
             });
 
         DBD::IngresII::db->install_method('ing_utf8_quote');
+        DBD::IngresII::db->install_method('ing_bool_to_str');
+        DBD::IngresII::db->install_method('ing_norm_bool');
 
         $drh;
     }
@@ -342,6 +344,31 @@ DBD::IngresII - DBI driver for Ingres database systems
         }
         return $new_str;
 
+    }
+
+    sub ing_bool_to_str {
+        my ($dbh, $bool) = @_;
+        
+        unless (defined $bool) {
+            return 'NULL';
+        }
+        elsif ($bool == 0) {
+            return 'FALSE';
+        }
+        elsif ($bool == 1) {
+            return 'TRUE';
+        }
+        else {
+            Carp::carp 'Non-boolean passed to ->ing_bool_to_str';
+            return undef;
+        }
+    }
+
+    sub ing_norm_bool {
+        my ($dbh, $bool) = @_;
+        
+        return undef unless defined $bool;
+        return $bool ? 1 : 0;
     }
 }
 
@@ -829,6 +856,23 @@ the $sth->{ing_lengths} field.
 
 Returns quoted string (which prevents SQL injection) with escaped UTF-8
 literals.
+
+=head2 ing_bool_to_str
+
+    # Returns 'TRUE':
+    $dbh->ing_bool_to_str($hashref->{some_kind_of_true_bool);
+
+Converts boolean returned from Ingres into string. For undef it returns 'NULL',
+for 0 - 'FALSE' and for 1 'TRUE'.
+
+=head2 ing_norm_bool
+
+    # Returns 1:
+    $dbh->ing_norm_bool(34);
+
+If supplied scalar is true, it returns 1, otherwise it returns 0.
+There's one special case - when supplied scalar is undef, C<ing_norm_bool>
+returns undef which is translated by DBI to NULL.
 
 =head1 FEATURES NOT IMPLEMENTED
 
