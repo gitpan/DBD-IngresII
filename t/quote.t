@@ -39,12 +39,13 @@ unless (defined $dbname) {
     plan skip_all => 'DBI_DBNAME and DBI_DSN aren\'t present';
 }
 else {
-    plan tests => 1;
+    plan tests => 2;
 }
 
 my $dbh = connect_db($dbname);
 
-ok(($dbh->ing_utf8_quote(q{ąść'}) eq q{U&'\+000105\+00015b\+000107'''}), 'Testing UTF-8 quoting');
+ok(($dbh->ing_utf8_quote(q{ąść'}) eq q{U&'\\+000105\\+00015b\\+000107'''}), 'Testing UTF-8 quoting');
+ok(($dbh->ing_utf8_quote(q{\\+000105}) eq q{U&'\\\\+000105'}), 'Testing UTF-8 quoting with backslashes');
 
 $dbh and $dbh->commit;
 $dbh and $dbh->disconnect;

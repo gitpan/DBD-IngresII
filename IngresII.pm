@@ -34,7 +34,7 @@ DBD::IngresII - DBI driver for Ingres database systems
     use DynaLoader ();
     @ISA = qw(DynaLoader);
 
-    $VERSION = '0.74';
+    $VERSION = '0.75';
     my $Revision = substr(q$Change: 18308 $, 8)/100;
 
     bootstrap DBD::IngresII $VERSION;
@@ -324,14 +324,24 @@ DBD::IngresII - DBI driver for Ingres database systems
 
     sub ing_utf8_quote {
         my ($dbh, $str) = @_;
-        my ($new_str, @chars);
+        my ($new_str, @chars, $is_ascii);
         
         $str = '' unless defined $str;
         $new_str = '';
-
-        warn 'Non-utf8 string passed to ->utf8_quote' unless utf8::is_utf8($str);
         
+        $is_ascii = $str =~ /^[[:ascii:]]*$/;
+        
+        unless ($is_ascii || utf8::is_utf8($str)) {
+            Carp::carp 'Non-utf8 string passed to ->utf8_quote';
+        }
+
         $str = 'U&' . $dbh->quote($str);
+
+        # Backslashes need to be escaped
+        $str =~ s{\\}{\\\\}g;
+
+        return $str if $is_ascii;
+
         @chars = split //, $str;
 
         for (@chars) {
@@ -922,7 +932,7 @@ someone is willing to do it.
     # Database must be created with "createdb -i dbname"
     use utf8;
 
-    use Encode
+    use Encode;
 
     my $dbh = DBI->connect("DBI:IngresII:dbname");
     my $sth = $dbh->prepare("CREATE TABLE foobar (str nchar(10))");

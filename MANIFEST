@@ -14,4 +14,3 @@ t/event.t
 t/exec.t
 t/nchar.t
 t/quote.t
-META.json                                Module JSON meta-data (added by MakeMaker)

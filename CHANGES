@@ -1,3 +1,8 @@
+v0.75     2012.06.12
+ - Fixed docs
+ - ->ing_utf8_quote uses carp instead of warn
+ - ->ing_utf8_quote works with ASCII strings
+ - ->ing_utf8_quote escapes backslashes
 v0.74     2012.05.15
  - Created ->ing_bool_to_str method
  - Created ->ing_norm_bool method
