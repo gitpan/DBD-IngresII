@@ -14,3 +14,4 @@ t/event.t
 t/exec.t
 t/nchar.t
 t/quote.t
+t/utf8.t

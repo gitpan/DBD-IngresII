@@ -1,3 +1,8 @@
+v0.76     2012.06.21
+ - Fixed formatting
+ - Added "ing_enable_utf8" dbh attribute
+ - Big update of docs, README is now deprecated
+ - Now NCHAR will work on platforms with 32-bit wchar_t
 v0.75     2012.06.12
  - Fixed docs
  - ->ing_utf8_quote uses carp instead of warn

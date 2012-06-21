@@ -33,9 +33,36 @@ sub connect_db ($) {
 }
 
 sub get_charset {
-    return($ENV{DBI_CHARSET} || 'utf-8'); 
+    my %charsets = (
+        UTF8    => 'utf-8',
+        WIN1250 => 'cp1250'
+    );
+
+    unless (defined $ENV{DBI_CHARSET}) {
+        return 'utf-8';
+    }
+
+    unless (defined $charsets{$ENV{DBI_CHARSET}}) {
+        die "Unknown charset passed: '$ENV{DBI_CHARSET}'";
+    }
+
+    return $charsets{$ENV{DBI_CHARSET}};
 }
 
+sub get_data_for_charset {
+    my $charset = shift;
+
+    my %data = (
+        'utf-8' => 'ąść',
+        win1250 => 'ąść'
+    );
+
+    unless (defined $data{$charset}) {
+        die "No data for charset '$charset'";
+    }
+
+    return $data{$charset};
+}
 
 my $dbname = get_dbname();
 
@@ -47,8 +74,8 @@ unless (defined $dbname) {
     plan skip_all => 'DBI_DBNAME and DBI_DSN aren\'t present';
 }
 else {
-    unless ($ENV{TEST_NCHAR}) {
-        plan skip_all => 'TEST_NCHAR isn\'t present';
+    unless ($ENV{TEST_NCHAR} || $ENV{DBI_TEST_NCHAR}) {
+        plan skip_all => 'DBI_TEST_NCHAR isn\'t present';
         exit 0;
     }
     plan tests => 22;
@@ -73,8 +100,7 @@ ok($dbh->do("DELETE FROM $testtable WHERE id = 1"),
 ok($dbh->do( "DROP TABLE $testtable" ),
       'Basic drop table');
 
-my $data = encode($charset, 'ąść');
-my $data2 = encode($charset, 'śłź');
+my $data = get_data_for_charset($charset);
 
 
 # CREATE TABLE OF APPROPRIATE TYPE
@@ -86,8 +112,8 @@ ok($cursor->finish, 'Insert finish (NCHAR)');
 ok($cursor = $dbh->prepare("SELECT val FROM $testtable"), 'Select prepare (NCHAR)');
 ok($cursor->execute, 'Select execute (NCHAR)');
 my $ar = $cursor->fetchrow_arrayref; 
-ok($ar && decode('utf-16le', $ar->[0]) eq ('ąść' . (' ' x 7)), 'Select fetch (NCHAR)')
-	or print STDERR 'Got "' . encode('utf-8', decode('utf-16le', $ar->[0])) . '", expected "' . encode('utf-8', 'ąść' . (' ' x 7)) . "\".\n";
+ok($ar && decode('utf-16le', $ar->[0]) eq ($data . (' ' x (10 - (length $data)))), 'Select fetch (NCHAR)')
+	or print STDERR 'Got "' . encode('utf-8', decode('utf-16le', $ar->[0])) . '", expected "' . encode('utf-8', $data . (' ' x (10 - (length $data)))) . "\".\n";
 ok($cursor->finish, 'Select finish (NCHAR)');
 ok($dbh->do("DROP TABLE $testtable"), 'Drop table (NCHAR)');
 
@@ -95,13 +121,13 @@ ok($dbh->do("DROP TABLE $testtable"), 'Drop table (NCHAR)');
 ok($dbh->do("CREATE TABLE $testtable (val NVARCHAR(10))"), 'Create table (NVARCHAR)');
 ok($cursor = $dbh->prepare("INSERT INTO $testtable VALUES (?)"),
 	  'Insert prepare (NVARCHAR)');
-ok($cursor->execute($data2), 'Insert execute (NVARCHAR)');
+ok($cursor->execute($data), 'Insert execute (NVARCHAR)');
 ok($cursor->finish, 'Insert finish (NVARCHAR)');
 ok($cursor = $dbh->prepare("SELECT val FROM $testtable"), 'Select prepare (NVARCHAR)');
 ok($cursor->execute, 'Select execute (NVARCHAR)');
 $ar = $cursor->fetchrow_arrayref; 
-ok($ar && $ar->[0] eq encode('utf-16le', 'śłź'), 'Select fetch (NCHAR)')
-	or print STDERR 'Got "' . encode('utf-8', decode('utf-16le', $ar->[0])) . '", expected "' . encode('utf-8', 'śłź') . "\".\n";
+ok($ar && $ar->[0] eq encode('utf-16le', $data), 'Select fetch (NCHAR)')
+	or print STDERR 'Got "' . encode('utf-8', decode('utf-16le', $ar->[0])) . '", expected "' . encode('utf-8', $data) . "\".\n";
 ok($cursor->finish, 'Select finish (NVARCHAR)');
 ok($dbh->do("DROP TABLE $testtable"), 'Drop table (NVARCHAR)');
 

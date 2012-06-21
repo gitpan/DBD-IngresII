@@ -34,12 +34,13 @@ struct imp_drh_st {
 
 /* Define dbh implementor data structure */
 struct imp_dbh_st {
-    dbih_dbc_t com;         /* MUST be first element in structure   */
-    int        session;     /* session id for this connection */
-    int        trans_no;    /* transaction sequence number, is
-                            ** incremented by 1 at every commit/
-                            ** rollback */
-    int       ing_rollback; /* Rollsback on change of autocommit */
+    dbih_dbc_t com;            /* MUST be first element in structure   */
+    int        session;        /* session id for this connection */
+    int        trans_no;       /* transaction sequence number, is
+                               ** incremented by 1 at every commit/
+                               ** rollback */
+    int       ing_rollback;    /* Rollsback on change of autocommit */
+    int       ing_enable_utf8; /* automatic UTF-8 upgrading */
 };
 
 /* Define sth implementor data structure */

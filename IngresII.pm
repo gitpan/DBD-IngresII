@@ -34,7 +34,7 @@ DBD::IngresII - DBI driver for Ingres database systems
     use DynaLoader ();
     @ISA = qw(DynaLoader);
 
-    $VERSION = '0.75';
+    $VERSION = '0.76';
     my $Revision = substr(q$Change: 18308 $, 8)/100;
 
     bootstrap DBD::IngresII $VERSION;
@@ -154,7 +154,7 @@ DBD::IngresII - DBI driver for Ingres database systems
 	    delete $dbh->{Statement};
     	    my $numrows = DBD::IngresII::db::_do($dbh, $statement);
 	    return $numrows ;
-	}	
+	}
     }
 
     sub prepare {
@@ -278,7 +278,7 @@ DBD::IngresII - DBI driver for Ingres database systems
 	      undef, "","",  undef, 1, 0, 2, 0, 1, 0, undef, 0, 0, undef, undef, undef, undef ],
     	    [ 'FLOAT',        DBI::SQL_DOUBLE,
 	      undef, "","", "size=4,8", 1, 0, 2, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
-    	    [ 'ANSIDATE',     DBI::SQL_DATE,   
+    	    [ 'ANSIDATE',     DBI::SQL_DATE,
 	      undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
     	    [ 'DECIMAL',      DBI::SQL_DECIMAL,
 	      undef, "","", "precision,scale", 1, 0, 2, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
@@ -288,35 +288,35 @@ DBD::IngresII - DBI driver for Ingres database systems
 	      undef, "","", undef, 1, 0, 2, 0, 0 ,0 ,undef ,0 ,0, undef, undef, undef, undef ],
     	    [ 'BYTE VARYING', DBI::SQL_VARBINARY,
 	      undef, "'","'", "max length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
-    	    [ 'C',         DBI::SQL_CHAR,   
-	      undef, "'","'", "length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],      
-    	    [ 'CHAR',         DBI::SQL_CHAR,   
+    	    [ 'C',         DBI::SQL_CHAR,
 	      undef, "'","'", "length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
-            [ 'NCHAR',         DBI::SQL_BINARY,   
+    	    [ 'CHAR',         DBI::SQL_CHAR,
 	      undef, "'","'", "length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
-            [ 'NVARCHAR',      DBI::SQL_VARBINARY,   
+            [ 'NCHAR',         DBI::SQL_BINARY,
 	      undef, "'","'", "length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
-    	    [ 'BYTE',         DBI::SQL_BINARY, 
+            [ 'NVARCHAR',      DBI::SQL_VARBINARY,
 	      undef, "'","'", "length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
-    	    [ 'LONG VARCHAR', DBI::SQL_LONGVARCHAR, 
+    	    [ 'BYTE',         DBI::SQL_BINARY,
+	      undef, "'","'", "length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+    	    [ 'LONG VARCHAR', DBI::SQL_LONGVARCHAR,
 	      undef, undef, undef, undef, 1, 1, 0, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
-    	    [ 'LONG BYTE',    DBI::SQL_LONGVARBINARY, 
+    	    [ 'LONG BYTE',    DBI::SQL_LONGVARBINARY,
 	      undef, undef, undef, undef, 1, 1, 0, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
-            [ 'TIMESTAMP',    DBI::SQL_DATETIME,   
+            [ 'TIMESTAMP',    DBI::SQL_DATETIME,
 	      undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
-            [ 'TIMESTAMP WITH TIME ZONE',    DBI::SQL_DATETIME,   
+            [ 'TIMESTAMP WITH TIME ZONE',    DBI::SQL_DATETIME,
 	      undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
-            [ 'TIMESTAMP WITH LOCAL TIME ZONE',    DBI::SQL_DATETIME,   
+            [ 'TIMESTAMP WITH LOCAL TIME ZONE',    DBI::SQL_DATETIME,
 	      undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
-            [ 'TIME',    DBI::SQL_TIME,   
+            [ 'TIME',    DBI::SQL_TIME,
 	      undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
-            [ 'TIME WITH TIME ZONE',    DBI::SQL_TIME,   
+            [ 'TIME WITH TIME ZONE',    DBI::SQL_TIME,
 	      undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
-            [ 'TIME WITH LOCAL TIME ZONE',    DBI::SQL_TIME,   
+            [ 'TIME WITH LOCAL TIME ZONE',    DBI::SQL_TIME,
 	      undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
-            [ 'INTERVAL YEAR TO MONTH',    DBI::SQL_INTERVAL_YEAR_TO_MONTH,   
+            [ 'INTERVAL YEAR TO MONTH',    DBI::SQL_INTERVAL_YEAR_TO_MONTH,
 	      undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
-            [ 'INTERVAL DAY TO SECOND',    DBI::SQL_INTERVAL_DAY_TO_SECOND,   
+            [ 'INTERVAL DAY TO SECOND',    DBI::SQL_INTERVAL_DAY_TO_SECOND,
 	      undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
     	];
     	return $ti;
@@ -325,12 +325,12 @@ DBD::IngresII - DBI driver for Ingres database systems
     sub ing_utf8_quote {
         my ($dbh, $str) = @_;
         my ($new_str, @chars, $is_ascii);
-        
+
         $str = '' unless defined $str;
         $new_str = '';
-        
+
         $is_ascii = $str =~ /^[[:ascii:]]*$/;
-        
+
         unless ($is_ascii || utf8::is_utf8($str)) {
             Carp::carp 'Non-utf8 string passed to ->utf8_quote';
         }
@@ -358,7 +358,7 @@ DBD::IngresII - DBI driver for Ingres database systems
 
     sub ing_bool_to_str {
         my ($dbh, $bool) = @_;
-        
+
         unless (defined $bool) {
             return 'NULL';
         }
@@ -376,7 +376,7 @@ DBD::IngresII - DBI driver for Ingres database systems
 
     sub ing_norm_bool {
         my ($dbh, $bool) = @_;
-        
+
         return undef unless defined $bool;
         return $bool ? 1 : 0;
     }
@@ -844,7 +844,7 @@ See also the C<$sth-E<gt>{TYPE}> field in the DBI docs.
 =head2 ing_ph_ingtypes
 
     $sth->{ing_ph_ingtypes}           (\@)
-    
+
 Returns an array containing the Ingres types of the columns the
 placeholders represent. This is a guess from the context of the
 placeholder in the prepared statement. Be aware, that the guess
@@ -860,7 +860,7 @@ Returns an array containing the lengths of the placeholders analog to
 the $sth->{ing_lengths} field.
 
 =head2 ing_utf8_quote
-    
+
     # Returns q{U&'Chrz\+000105szcz'}
     $dbh->ing_utf8_quote('Chrząszcz');
 
@@ -884,6 +884,16 @@ If supplied scalar is true, it returns 1, otherwise it returns 0.
 There's one special case - when supplied scalar is undef, C<ing_norm_bool>
 returns undef which is translated by DBI to NULL.
 
+=head2 ing_enable_utf8
+
+    $dbh->{ing_enable_utf8} = 1;
+
+By default, this flag is set to 0. When it is enabled, all strings (C<CHAR>,
+C<VARCHAR>, C<C>, etc., but not C<NCHAR>/C<NVARCHAR>) retrieved from database
+which can be interpreted as valid UTF-8 (but not as valid ASCII), will have
+scalar's ("scalar" means "variable" in Perl world) UTF-8 flag set on.
+
+Note that you should use this attribute only if C<II_CHARSET> is set to C<UTF8>.
 =head1 FEATURES NOT IMPLEMENTED
 
 =head2 state
@@ -927,15 +937,50 @@ Until that is defined procedure calls can be implemented as a
 DB::Ingres-specific function (like L<get_event>) if the need arises and
 someone is willing to do it.
 
-=head1 UNICODE EXAMPLE
+=head1 UNICODE FAQ
+
+In this section I will answer some questions about Unicode and Ingres.
+
+    Q: What is Unicode, and what is UTF-8, are these different words for same
+       thing?
+
+    A: Please read perlunitut, especially the "Definitions" section. To read it
+       run "perldoc perlunitut" command or type "perlunitut" in your web search
+       engine of choice.
+
+    Q: Is it possible to change II_CHARSET after installation of Ingres?
+
+    A: No, it would corrupt database. You need to reinstall Ingres, this time
+       with other II_CHARSET.
+
+    Q: I tried your examples and all I get is some garbage.
+
+    A: There are few possibilites what went wrong:
+
+         - You have created database with "createdb -n dbname", not
+           "createdb -i dbname".
+
+         - You are printing string to console without encoding it to console
+           charset. For example, for polish Windows you need to encode it to
+           cp852 encoding.
+
+=head1 UNICODE EXAMPLES
+
+You want to store or retrieve unicode string from Ingres database? Like
+with everything in Perl, there's more than one way to do it (TMTOWTDI).
+Here are some examples:
+
+    # Example number one, it uses NVARCHAR, and assumes that II_CHARSET is set
+    # to UTF8
 
     # Database must be created with "createdb -i dbname"
+
     use utf8;
 
     use Encode;
 
     my $dbh = DBI->connect("DBI:IngresII:dbname");
-    my $sth = $dbh->prepare("CREATE TABLE foobar (str nchar(10))");
+    my $sth = $dbh->prepare("CREATE TABLE foobar (str nvarchar(10))");
     $sth->execute;
     $sth = $dbh->prepare("INSERT INTO foobar values (?)");
     $sth->execute(encode('utf-8', 'ąść')); # Instead of utf-8 use charset
@@ -945,11 +990,158 @@ someone is willing to do it.
     $sth->execute;
     my $hashref = $sth->fetchrow_hashref;
 
-    print encode('utf8', decode('utf-16le', $hashref->{str}));
+    my $variable = decode('utf-16le', $hashref->{str});
+
+Second one:
+
+    # Example number two, it uses VARCHAR, it will work only with II_CHARSET
+    # set to UTF8.
+
+    # Database must be created with "createdb -i dbname"
+
+    use utf8;
+
+    use Encode;
+
+    my $dbh = DBI->connect("DBI:IngresII:dbname");
+    my $sth = $dbh->prepare("CREATE TABLE foobar (str varchar(10))");
+    $sth->execute;
+    $sth = $dbh->prepare("INSERT INTO foobar values (?)");
+    $sth->execute('ąść');
+
+    $sth = $dbh->prepare("SELECT * FROM foobar");
+    $sth->execute;
+    my $hashref = $sth->fetchrow_hashref;
+
+    my $variable = decode('utf-8', $hashref->{str});
+
+Third:
+
+    # Example number three, it uses VARCHAR, it will work only with II_CHARSET
+    # set to UTF8.
+    # Now we will use automatic UTF-8 handling.
+
+    # Database must be created with "createdb -i dbname"
+
+    use utf8;
+
+    use Encode;
+
+    my $dbh = DBI->connect("DBI:IngresII:dbname");
+    $dbh->{ing_enable_utf8} = 1; # Enable UTF-8 support
+    my $sth = $dbh->prepare("CREATE TABLE foobar (str varchar(10))");
+    $sth->execute;
+    $sth = $dbh->prepare("INSERT INTO foobar values (?)");
+    $sth->execute('ąść');
+
+    $sth = $dbh->prepare("SELECT * FROM foobar");
+    $sth->execute;
+    my $hashref = $sth->fetchrow_hashref;
+
+    my $variable = $hashref->{str}; # No need to decode.
+
+Fourth:
+
+    # Example number three, it uses VARCHAR, it will work only with II_CHARSET
+    # set to UTF8.
+    # Now we will use automatic UTF-8 handling.
+
+    # Database must be created with "createdb -i dbname"
+
+    use utf8;
+
+    use Encode;
+
+    my $dbh = DBI->connect("DBI:IngresII:dbname");
+    $dbh->{ing_enable_utf8} = 1; # Enable UTF-8 support
+    my $sth = $dbh->prepare("CREATE TABLE foobar (str varchar(10))");
+    $sth->execute;
+    my $input = $dbh->ing_utf8_quote('ąść');
+    $sth = $dbh->prepare("INSERT INTO foobar values ($input)");
+    $sth->execute;
+
+    $sth = $dbh->prepare("SELECT * FROM foobar");
+    $sth->execute;
+    my $hashref = $sth->fetchrow_hashref;
+
+    my $variable = $hashref->{str}; # No need to decode.
+
+=head1 INSTALLATION
+
+You can install C<DBD::IngresII> manually, or use CPAN.
+
+
+=over 4
+
+=item *
+
+Manual installation with basic tests (if you are using Windows, use C<set>
+instead of C<export> and C<dmake> or C<nmake> instead of C<make>:
+
+    perl Makefile.PL
+    export DBI_DSN=<my-favourite-test-database-dsn>
+    make
+    make test
+    make install
+
+Instead of C<DBI_DSN>, you can use C<DBI_DBNAME> which should contain name of
+desired test database.
+
+=item *
+
+Manual installation with full tests (requires database created with C<-i> flag
+and C<II_CHARSET> must be set to C<UTF8>).
+
+    perl Makefile.PL
+    export DBI_TEST_NCHAR=1
+    export DBI_TEST_UTF8=1
+    export DBI_DSN=<my-favourite-test-database-dsn>
+    make
+    make test
+    make install
+
+=item *
+
+Automatic installation with CPAN.
+
+    export DBI_DSN=<my-favourite-test-database-dsn>
+    cpan install DBD::IngresII
+
+=back
+
+=head1 SUCCESSFULLY TESTED PLATFORMS
+
+=over 4
+
+=item *
+
+Ingres 10.1 Community Build 121 + Windows + Visual C++ on x86
+
+=item *
+
+Ingres 10.1 Community Build 121 + Windows + MinGW on x86
+
+=item *
+
+Ingres 10.1 Community Build 121 + Windows + Visual C++ on x64
+
+=item *
+
+Ingres 10.1 Community Build 121 + Windows + MinGW on x64
+
+=item *
+
+Ingres 10.1 Community Build 121 + Linux + gcc on x86
+
+=item *
+
+Ingres 10.1 Community Build 121 + Linux + gcc on x64
+
+=back
 
 =head1 NOTES
 
-=head2 $dbh->table_info, $dbh->column_info, $dbh->get_info 
+=head2 $dbh->table_info, $dbh->column_info, $dbh->get_info
 
 The table_info and column_info functions are just working against tables.
 Views and synonyms still have to be implemented. The get_info function
@@ -958,12 +1150,45 @@ for documentation for the older ones.
 
 I wonder if I have forgotten something?
 
+=head1 IF YOU HAVE PROBLEMS
+
+There are few places where you can seek help:
+
+=over 4
+
+=item *
+
+Actian community forums - C<http://community.actian.com/forum/>
+
+=item *
+
+Ingres usenet group - C<comp.databases.ingres>
+
+=item *
+
+Myself - C<xenu@poczta.onet.pl>
+
+=back
+
 =head1 GIT REPOSITORY
 
 You can access latest development version of DBD::IngresII on github:
 
     https://github.com/xenu/dbd-ingresii
 
+=head1 REPORTING BUGS
+
+Please report bugs at CPAN RT:
+
+    https://rt.cpan.org/Public/Dist/Display.html?Name=DBD-IngresII
+
+Please include full details of which version of Ingres/esql, operating system
+and Perl you're using. If you are on Windows, include name of Perl distribution
+that you are using (i.e. "ActivePerl" or "Strawberry Perl").
+
+=head1 KNOWN PROBLEMS
+
+TODO
 
 =head1 SEE ALSO
 
@@ -975,9 +1200,11 @@ DBI/DBD was developed by Tim Bunce, <Tim.Bunce@ig.co.uk>, who also
 developed the DBD::Oracle that is the closest we have to a generic DBD
 implementation.
 
-Henrik Tougaard, <htoug@cpan.org> developed the DBD::IngresII extension.
+Henrik Tougaard, <htoug@cpan.org> developed the DBD::Ingres extension.
 
 Stefan Reddig, <sreagle@cpan.org> is currently (2008) adopting it to
 include some more features.
+
+Tomasz Konojacki has forked DBD::Ingres to DBD::IngresII.
 
 =cut
