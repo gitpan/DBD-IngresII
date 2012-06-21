@@ -1659,10 +1659,11 @@ dbd_st_fetch(sth, imp_sth)
                     short e = 0; /* wchar_t */
                     short len = *(short *)var->sqldata;
                     U16 *buf = (U16 *)(var->sqldata + sizeof(short));
-                    utf16 = malloc((2 * len) * sizeof(U16));
+
 
                     if (sizeof(wchar_t) == 4)
                     {
+                        utf16 = malloc((2 * len) * sizeof(U16));
                         while ((len * 2) > i)
                         {
                             if (i % 2 != 0)
@@ -1673,6 +1674,7 @@ dbd_st_fetch(sth, imp_sth)
                             ++i;
                         }
                         sv_setpvn(sv, (char *)utf16, len * 2);
+                        free(utf16);
                     }
                     else if (sizeof(wchar_t) == 2)
                         sv_setpvn(sv, (char *)buf, len * 2);

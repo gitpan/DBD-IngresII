@@ -1,3 +1,5 @@
+v0.77     2012.06.21
+ - Fixed memory leak
 v0.76     2012.06.21
  - Fixed formatting
  - Added "ing_enable_utf8" dbh attribute
