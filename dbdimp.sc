@@ -1660,11 +1660,10 @@ dbd_st_fetch(sth, imp_sth)
                     short len = *(short *)var->sqldata;
                     U16 *buf = (U16 *)(var->sqldata + sizeof(short));
 
-
                     if (sizeof(wchar_t) == 4)
                     {
-                        utf16 = malloc((2 * len) * sizeof(U16));
-                        while ((len * 2) > i)
+                        utf16 = malloc(len * sizeof(U16));
+                        while ((len * sizeof(U16)) > i)
                         {
                             if (i % 2 != 0)
                             {
@@ -1673,14 +1672,14 @@ dbd_st_fetch(sth, imp_sth)
                             }
                             ++i;
                         }
-                        sv_setpvn(sv, (char *)utf16, len * 2);
+                        sv_setpvn(sv, (char *)utf16, len * sizeof(U16));
                         free(utf16);
                     }
                     else if (sizeof(wchar_t) == 2)
-                        sv_setpvn(sv, (char *)buf, len * 2);
+                        sv_setpvn(sv, (char *)buf, len * sizeof(U16));
                     else
                     {
-                        sv_setpvn(sv, (char *)buf, len * 2);
+                        sv_setpvn(sv, (char *)buf, len * sizeof(U16));
                         if (dbis->debug >= 3)
                             PerlIO_printf(DBILOGFP,
                                 "wchar_t has unsupported size %d, DBD::IngresII will probably output garbage",
