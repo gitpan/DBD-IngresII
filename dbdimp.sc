@@ -53,13 +53,13 @@ static void dump_sqlda(sqlda)
     for (i=0; i<sqlda->sqld; ++i)
     {
         IISQLVAR *var = &sqlda->sqlvar[i];
-        PerlIO_printf(DBILOGFP, "  sqlvar[%d]: type: %d, len: %d, ind: %d",
+        PerlIO_printf(DBILOGFP, "  sqlvar[%d]: type: %d, len: %d, ind: %p",
             i, var->sqltype, var->sqllen, var->sqlind);
         switch (var->sqltype)
         {
         case IISQ_INT_TYPE:
             PerlIO_printf(DBILOGFP, ", var: %ld\n",
-                *((IV*)(var->sqldata)));
+                (long)(*((IV*)(var->sqldata))));
             break;
         case IISQ_FLT_TYPE:
             PerlIO_printf(DBILOGFP, ", var: %g\n",
@@ -101,7 +101,7 @@ sql_check(h)
             PerlIO_printf(DBILOGFP, " get errtext");
         EXEC SQL INQUIRE_INGRES(:errbuf = ERRORTEXT);
         { /* remove trailing "\n" */
-            int i = strlen(errbuf)-1;
+            size_t i = strlen(errbuf)-1;
             while ((errbuf[i] == '\n' || errbuf[i] == ' ') && i > 1)
             {
                 errbuf[i] = 0;
@@ -190,7 +190,7 @@ release_statement(num)
     statement_numbers[num / 8] &= ~(1 << (num % 8));
     if (dbis->debug >= 4)
         PerlIO_printf(DBILOGFP, "rel_st.nam: %d [%d]=%u\n", num, num/8,
-                statement_numbers[num/8]);
+               (unsigned int)statement_numbers[num/8]);
 }
 
 static void
@@ -211,7 +211,7 @@ generate_statement_name(st_num, name)
            in the already allocated lump */
         int bit;
         if (dbis->debug >= 4)
-            PerlIO_printf(DBILOGFP, " [%d]=%u", i, statement_numbers[i]);
+            PerlIO_printf(DBILOGFP, " [%d]=%u", i, (unsigned int)statement_numbers[i]);
         for (bit=0; bit < 32; bit++)
         {
             if (((statement_numbers[i]>>bit) & 1) == 0)
@@ -631,7 +631,7 @@ dbd_db_STORE_attrib(dbh, imp_dbh, keysv, valuesv)
         return FALSE;
 
     if (cachesv) /* cache value for later DBI 'quick' fetch? */
-        hv_store((HV*)SvRV(dbh), key, kl, cachesv, 0);
+        hv_store((HV*)SvRV(dbh), key, (U32)kl, cachesv, 0);
     return TRUE;
 }
 
@@ -643,7 +643,6 @@ dbd_db_FETCH_attrib(dbh, imp_dbh, keysv)
 {
     STRLEN kl;
     char *key = SvPV(keysv,kl);
-    int i;
     SV *retsv = NULL;
     /* Default to caching results for DBI dispatch quick_FETCH  */
     int cacheit = TRUE;
@@ -680,7 +679,7 @@ dbd_db_FETCH_attrib(dbh, imp_dbh, keysv)
         return Nullsv;
 
     if (cacheit) /* cache for next time (via DBI quick_FETCH) */
-        if (hv_store((HV*)SvRV(dbh), key, kl, retsv, 0) != NULL)
+        if (hv_store((HV*)SvRV(dbh), key, (U32)kl, retsv, 0) != NULL)
             SvREFCNT_inc(retsv);
 
     return (retsv);
@@ -847,7 +846,7 @@ dbd_get_handler(fbh)
         int data_end;
         unsigned long size_read;
         char buf[HANDLER_READ_SIZE];
-        long max_to_read = sizeof(buf);
+        unsigned long max_to_read = sizeof(buf);
     EXEC SQL END DECLARE SECTION;
 #ifndef __LP64__
     STRLEN offset, data_len, trunc_len;
@@ -868,7 +867,7 @@ dbd_get_handler(fbh)
      * data to be truncated at a length less than HANDLER_READ_SIZE.
      * We need to read 1 extra so we know when we really have truncated. */
     if (max_to_read > trunc_len + 1)
-        max_to_read = trunc_len + 1;
+        max_to_read = (unsigned long)(trunc_len + 1);
 
     /* We can use indic as the truncated indicator, because Ingres tells
      * us that the get handler is not called at all when the data is null.
@@ -893,14 +892,15 @@ dbd_get_handler(fbh)
         }
 
 #ifndef __LP64__
+
         if (offset + size_read > trunc_len)
         {
 #else
         if (offset + (U32)size_read > trunc_len)
         {
-#endif
+#endif  
             /* we've read the maximum, time to truncate. */
-            size_read = trunc_len - offset;
+            size_read = (unsigned long)(trunc_len - offset);
             fbh->indic = 1;
             data_end = 1;
             EXEC SQL ENDDATA;
@@ -977,7 +977,8 @@ dbd_put_handler(sv)
     SV *sv;
 {
     EXEC SQL BEGIN DECLARE SECTION;
-        int data_end, chunk;
+        int data_end;
+        unsigned long chunk;
         char *cp, *data;
     EXEC SQL END DECLARE SECTION;
     STRLEN length, offset;
@@ -994,7 +995,7 @@ dbd_put_handler(sv)
     do
     {
         cp = data + offset;
-        chunk = length - offset;
+        chunk = (unsigned long)(length - offset);
         data_end = 1;
 
         /* You must call PUT DATA at least once.  For 0 bytes you must
@@ -1322,8 +1323,8 @@ dbd_bind_ph (sth, imp_sth, param, value, sql_type, attribs, is_inout, maxlen)
             case SQL_LONGVARBINARY:
                 type = 4; break;
             default:
-                croak("DBD::Ingres::bind_param: Unknown TYPE: %d, param_no %d",
-                    sql_type, param_no);
+                croak("DBD::Ingres::bind_param: Unknown TYPE: %ld, param_no %d",
+                    (long)sql_type, param_no);
             }
         else if (!SvOK(value)) /* NULL */
             croak(
@@ -1383,7 +1384,7 @@ dbd_bind_ph (sth, imp_sth, param, value, sql_type, attribs, is_inout, maxlen)
             string = 0;
             len = 0;
         }
-        var->sqllen = len;
+        var->sqllen = (unsigned short)len;
         Renew(var->sqldata, len + sizeof(short), char);
         if (SvOK(value))
         {
@@ -1543,7 +1544,7 @@ dbd_st_fetch(sth, imp_sth)
     imp_sth_t *imp_sth;
 {
     IISQLDA *sqlda;
-    int num_fields;
+    IV num_fields;
     int i;
     AV *av;
     EXEC SQL BEGIN DECLARE SECTION;
@@ -1590,13 +1591,12 @@ dbd_st_fetch(sth, imp_sth)
     num_fields = AvFILL(av)+1;
 
     if (dbis->debug >= 3)
-        PerlIO_printf(DBILOGFP, "    dbd_st_fetch %d fields\n", num_fields);
+        PerlIO_printf(DBILOGFP, "    dbd_st_fetch %ld fields\n", (long)num_fields);
 
     for(i=0; i < num_fields; ++i)
     {
         imp_fbh_t *fbh = &imp_sth->fbh[i];
         IISQLVAR *var = fbh->var;
-        int ch;
         SV *sv = AvARRAY(av)[i]; /* Note: we (re)use the SV in the AV */
         if (dbis->debug >= 3)
             PerlIO_printf(DBILOGFP, "    Field #%d: ", i);
@@ -1617,7 +1617,7 @@ dbd_st_fetch(sth, imp_sth)
                     sv_setiv(sv, *(IV*)var->sqldata);
                 if (dbis->debug >= 3)
                     PerlIO_printf(DBILOGFP, "Int: %ld %ld\n",
-                          SvIV(sv), *(IV*)var->sqldata);
+                          (long)SvIV(sv), (long)*(IV*)var->sqldata);
                 break;
             case 'f':
                 sv_setnv(sv, *(double*)var->sqldata);
@@ -1644,8 +1644,8 @@ dbd_st_fetch(sth, imp_sth)
                     {
                         PerlIO_printf(DBILOGFP, "Text: '");
                         PerlIO_write(DBILOGFP, buf, len);
-                        PerlIO_printf(DBILOGFP, "', Chop: %d\n",
-                            DBIc_has(imp_sth, DBIcf_ChopBlanks));
+                        PerlIO_printf(DBILOGFP, "', Chop: %lu\n",
+                            (unsigned long)DBIc_has(imp_sth, DBIcf_ChopBlanks));
                     }
                     if (imp_dbh->ing_enable_utf8)
                         if (!is_ascii((U8*)buf, len) && is_utf8_string(buf, len))
@@ -1682,16 +1682,14 @@ dbd_st_fetch(sth, imp_sth)
                         sv_setpvn(sv, (char *)buf, len * sizeof(U16));
                         if (dbis->debug >= 3)
                             PerlIO_printf(DBILOGFP,
-                                "wchar_t has unsupported size %d, DBD::IngresII will probably output garbage",
-                                sizeof(wchar_t));
+                                "wchar_t has unsupported size %lu, DBD::IngresII will probably output garbage",
+                                (unsigned long)sizeof(wchar_t));
                     }
 
                     if (dbis->debug >= 3)
                     {
                         PerlIO_printf(DBILOGFP, "Text (UTF-16): '");
                         PerlIO_write(DBILOGFP, buf, len);
-                        PerlIO_printf(DBILOGFP, "', Chop: %d\n",
-                            DBIc_has(imp_sth, DBIcf_ChopBlanks));
                     }
                     break;
                 }
@@ -1704,7 +1702,7 @@ dbd_st_fetch(sth, imp_sth)
                 }
                 sv_setsv(sv, fbh->sv);
                 if (dbis->debug >= 3)
-                    PerlIO_printf(DBILOGFP, "Long data (%d)\n", SvCUR(sv));
+                    PerlIO_printf(DBILOGFP, "Long data (%ld)\n", (long)SvCUR(sv));
                 break;
             default:
                 croak("DBD::Ingres: wierd field-type '%s' in field no. %d?\n",
@@ -1842,7 +1840,7 @@ dbd_st_STORE_attrib(sth, imp_sth, keysv, valuesv)
     return FALSE; /* no values to store */
 
     if (cachesv) /* cache value for later DBI 'quick' fetch? */
-        hv_store((HV*)SvRV(sth), key, kl, cachesv, 0);
+        hv_store((HV*)SvRV(sth), key, (U32)kl, cachesv, 0);
     return TRUE;
 }
 
@@ -2089,7 +2087,7 @@ dbd_st_FETCH_attrib(sth, imp_sth, keysv)
 
     if (cacheit)
     { /* cache for next time (via DBI quick_FETCH) */
-        SV **svp = hv_fetch((HV*)SvRV(sth), key, kl, 1);
+        SV **svp = hv_fetch((HV*)SvRV(sth), key, (U32)kl, 1);
         sv_free(*svp);
         *svp = retsv;
 

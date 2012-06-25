@@ -12,6 +12,8 @@
 */
 #define NEED_DBIXS_VERSION 7
 
+#define _CRT_SECURE_NO_WARNINGS /* be quiet MSVC ;p */
+
 #include <DBIXS.h>              /* installed by the DBI module  */
 #include <dbd_xsh.h>            /* ditto  */
 

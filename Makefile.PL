@@ -85,11 +85,11 @@ Place it in $II_SYSTEM\\ingres\\lib and run DBD::IngresII installation again.
     }
     if (-f "\"$II_SYSTEM/ingres/files/abflnk.opt\"") {
         # the option file should give us all the libraries we need
-        open(ABFLNK, "\"$II_SYSTEM/ingres/files/abflnk.opt\"")
+        open(my $abflnk, "\"$II_SYSTEM/ingres/files/abflnk.opt\"")
             or die "Can't read the option file ".
                    "'$II_SYSTEM/ingres/files/abflnk.opt'\n";
-        $linkwith = join(" ", <ABFLNK>);
-        close ABFLNK;
+        $linkwith = join(" ", <$abflnk>);
+        close $abflnk;
         $linkwith =~ s/\n//g;
         $linkwith =~ s/\$II_SYSTEM/$II_SYSTEM/g;
     } elsif (-f "\"$II_SYSTEM/ingres/lib/libcompat.1.so\"") {

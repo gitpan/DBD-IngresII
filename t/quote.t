@@ -15,7 +15,7 @@ sub get_dbname {
     return $dbname;
 }
 
-sub connect_db ($) {
+sub connect_db {
     # Connects to the database.
     # If this fails everything else is in vain!
     my ($dbname) = @_;

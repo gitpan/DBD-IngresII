@@ -1,3 +1,8 @@
+v0.79     2012.06.25
+ - PerlCritic is a little bit more happy
+ - Some MSVC warnings were silenced, some fixed
+ - NULL indicator address is printed correctly when debugging
+ - bool.t does not show warning
 v0.78     2012.06.21
  - NCHAR/NVARCHAR uses less memory
 v0.77     2012.06.21

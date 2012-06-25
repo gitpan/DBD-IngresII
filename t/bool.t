@@ -15,7 +15,7 @@ sub get_dbname {
     return $dbname;
 }
 
-sub connect_db ($) {
+sub connect_db {
     # Connects to the database.
     # If this fails everything else is in vain!
     my ($dbname) = @_;
@@ -47,7 +47,12 @@ my $dbh = connect_db($dbname);
 ok(($dbh->ing_bool_to_str(undef) eq 'NULL'), 'testing ->ing_bool_to_str(undef)');
 ok(($dbh->ing_bool_to_str(0) eq 'FALSE'), 'testing ->ing_bool_to_str(0)');
 ok(($dbh->ing_bool_to_str(1) eq 'TRUE'), 'testing ->ing_bool_to_str(1)');
+
+$SIG{__WARN__} = sub {}; # Disable warnings for next test
+
 ok((!defined $dbh->ing_bool_to_str(2)), 'testing ->ing_bool_to_str(2)');
+
+$SIG{__WARN__} = 'DEFAULT';
 
 ok((!defined $dbh->ing_norm_bool(undef)), 'testing ->ing_norm_bool(undef)');
 ok(($dbh->ing_norm_bool(3) == 1), 'testing ->ing_norm_bool(3)');

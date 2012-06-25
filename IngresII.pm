@@ -27,21 +27,27 @@ DBD::IngresII - DBI driver for Ingres database systems
 =cut
 
 # The POD text continues at the end of the file.
+
+# Note that Perl Critic will complain about this '{' but IMHO it improves
+# readability
 {
     package DBD::IngresII;
 
+    use strict;
+
     use DBI 1.00;
     use DynaLoader ();
-    @ISA = qw(DynaLoader);
+    
+    our @ISA = qw(DynaLoader);
 
-    $VERSION = '0.78';
+    our $VERSION = '0.79';
     my $Revision = substr(q$Change: 18308 $, 8)/100;
 
     bootstrap DBD::IngresII $VERSION;
 
-    $err = 0;		# holds error code   for DBI::err
-    $errstr = "";	# holds error string for DBI::errstr
-    $drh = undef;	# holds driver handle once initialised
+    our $err = 0;		# holds error code   for DBI::err
+    our $errstr = "";	# holds error string for DBI::errstr
+    our $drh = undef;	# holds driver handle once initialised
 
     sub driver{
         return $drh if $drh;
@@ -95,7 +101,7 @@ DBD::IngresII - DBI driver for Ingres database systems
 
         # Connect to the database..
         DBD::IngresII::db::_login($this, $dbname, $user, $auth)
-            or return undef;
+            or return;
 
         $this;
     }
@@ -138,14 +144,14 @@ DBD::IngresII - DBI driver for Ingres database systems
 	    (lc($statement) =~ /^delete/)
 	   )
 	{
-	    my $sth = $dbh->prepare($statement) or return undef;
+	    my $sth = $dbh->prepare($statement) or return;
 	    my $cnt = 0;
 	    foreach (@params) {
 		++$cnt;
 		if ( defined) {	$sth->bind_param($cnt, $_); }
 		else {	$sth->bind_param($cnt, $_, { TYPE => DBI::SQL_VARCHAR }); } #dummy type, not used
 	    }
-	    my $numrows = $sth->execute() or return undef;
+	    my $numrows = $sth->execute() or return;
 	    $sth->finish;
 	    return $numrows; #return $sth->rows; should bring the same result, but doesnt
 	}
@@ -171,7 +177,7 @@ DBD::IngresII - DBI driver for Ingres database systems
             });
 
         DBD::IngresII::st::_prepare($sth, $statement, $attribs)
-            or return undef;
+            or return;
 
         $sth;
     }
@@ -370,14 +376,14 @@ DBD::IngresII - DBI driver for Ingres database systems
         }
         else {
             Carp::carp 'Non-boolean passed to ->ing_bool_to_str';
-            return undef;
+            return;
         }
     }
 
     sub ing_norm_bool {
         my ($dbh, $bool) = @_;
 
-        return undef unless defined $bool;
+        return unless defined $bool;
         return $bool ? 1 : 0;
     }
 }
