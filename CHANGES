@@ -1,3 +1,6 @@
+v0.80     2012.07.20
+ - sql_check() has bigger buffer
+ - No more malloc() and free()
 v0.79     2012.06.25
  - PerlCritic is a little bit more happy
  - Some MSVC warnings were silenced, some fixed

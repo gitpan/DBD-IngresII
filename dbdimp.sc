@@ -86,7 +86,7 @@ sql_check(h)
     SV *h;
 {
     EXEC SQL BEGIN DECLARE SECTION;
-        char errbuf[256];
+        char errbuf[1024];
     EXEC SQL END DECLARE SECTION;
     D_imp_xxh(h);
     SV *errstr = DBIc_ERRSTR(imp_xxh);
@@ -1662,7 +1662,7 @@ dbd_st_fetch(sth, imp_sth)
 
                     if (sizeof(wchar_t) == 4)
                     {
-                        utf16 = malloc(len * sizeof(U16));
+                        Newx(utf16, len, U16);
                         while ((len * sizeof(U16)) > i)
                         {
                             if (i % 2 != 0)
@@ -1673,7 +1673,7 @@ dbd_st_fetch(sth, imp_sth)
                             ++i;
                         }
                         sv_setpvn(sv, (char *)utf16, len * sizeof(U16));
-                        free(utf16);
+                        Safefree(utf16);
                     }
                     else if (sizeof(wchar_t) == 2)
                         sv_setpvn(sv, (char *)buf, len * sizeof(U16));

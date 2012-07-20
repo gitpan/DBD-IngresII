@@ -8,7 +8,7 @@
 require 5.008_008;
 
 =head1 NAME
-
+z
 DBD::IngresII - DBI driver for Ingres database systems
 
 =head1 SYNOPSIS
@@ -40,14 +40,14 @@ DBD::IngresII - DBI driver for Ingres database systems
     
     our @ISA = qw(DynaLoader);
 
-    our $VERSION = '0.79';
+    our $VERSION = '0.80';
     my $Revision = substr(q$Change: 18308 $, 8)/100;
 
     bootstrap DBD::IngresII $VERSION;
 
-    our $err = 0;		# holds error code   for DBI::err
-    our $errstr = "";	# holds error string for DBI::errstr
-    our $drh = undef;	# holds driver handle once initialised
+    our $err = 0;        # holds error code   for DBI::err
+    our $errstr = "";    # holds error string for DBI::errstr
+    our $drh = undef;    # holds driver handle once initialised
 
     sub driver{
         return $drh if $drh;
@@ -89,11 +89,11 @@ DBD::IngresII - DBI driver for Ingres database systems
 
         unless ($ENV{'II_SYSTEM'}) {
             warn("II_SYSTEM not set. Ingres may fail\n")
-            	if $drh->{Warn};
+                if $drh->{Warn};
         }
         unless (-d "$ENV{'II_SYSTEM'}/ingres") {
             warn("No ingres directory in \$II_SYSTEM. Ingres may fail\n")
-            	if $drh->{Warn};
+                if $drh->{Warn};
         }
 
         $user = "" unless defined $user;
@@ -124,57 +124,57 @@ DBD::IngresII - DBI driver for Ingres database systems
 
     #EXPERIMENTAL! Do not use it!
     sub datatype_helper {
-	my ($dbh, $schema, $tablename, $columnname) = @_;
-	my $href = undef;
-	my $sth = $dbh->column_info('',$schema, $tablename,$columnname);
-	return until $href = $sth->fetchrow_hashref;
-	if (${$href}{type_name} =~ /LONG VARCHAR/ ) { return DBI::SQL_LONGVARCHAR; }
-	elsif (${$href}{type_name} =~ /LONG BYTE/ ) { return DBI::SQL_LONGVARBINARY; }
-	elsif (${$href}{type_name} =~ /DECIMAL/ ) { return DBI::SQL_DECIMAL; }
-	elsif (${$href}{type_name} =~ /INT/ ) { return DBI::SQL_INTEGER; }
-	else { return DBI::SQL_VARCHAR; }
+        my ($dbh, $schema, $tablename, $columnname) = @_;
+        my $href = undef;
+        my $sth = $dbh->column_info('',$schema, $tablename,$columnname);
+        return until $href = $sth->fetchrow_hashref;
+        if (${$href}{type_name} =~ /LONG VARCHAR/ ) { return DBI::SQL_LONGVARCHAR; }
+        elsif (${$href}{type_name} =~ /LONG BYTE/ ) { return DBI::SQL_LONGVARBINARY; }
+        elsif (${$href}{type_name} =~ /DECIMAL/ ) { return DBI::SQL_DECIMAL; }
+        elsif (${$href}{type_name} =~ /INT/ ) { return DBI::SQL_INTEGER; }
+        else { return DBI::SQL_VARCHAR; }
     }
 
     sub do {
         my ($dbh, $statement, $attribs, @params) = @_;
         Carp::carp "DBD::IngresII::\$dbh->do() attribs unused\n" if $attribs;
-	if (
-	    (lc($statement) =~ /^insert/) or
-	    (lc($statement) =~ /^update/) or
-	    (lc($statement) =~ /^delete/)
-	   )
-	{
-	    my $sth = $dbh->prepare($statement) or return;
-	    my $cnt = 0;
-	    foreach (@params) {
-		++$cnt;
-		if ( defined) {	$sth->bind_param($cnt, $_); }
-		else {	$sth->bind_param($cnt, $_, { TYPE => DBI::SQL_VARCHAR }); } #dummy type, not used
-	    }
-	    my $numrows = $sth->execute() or return;
-	    $sth->finish;
-	    return $numrows; #return $sth->rows; should bring the same result, but doesnt
-	}
-	else
-	{
-	    delete $dbh->{Statement};
-    	    my $numrows = DBD::IngresII::db::_do($dbh, $statement);
-	    return $numrows ;
-	}
+        if (
+            (lc($statement) =~ /^insert/) or
+            (lc($statement) =~ /^update/) or
+            (lc($statement) =~ /^delete/)
+        ) {
+            my $sth = $dbh->prepare($statement) or return;
+            my $cnt = 0;
+            foreach (@params) {
+                ++$cnt;
+                if (defined) { $sth->bind_param($cnt, $_); }
+                else {
+                    $sth->bind_param($cnt, $_, { TYPE => DBI::SQL_VARCHAR }); #dummy type, not used
+                }
+            }
+            my $numrows = $sth->execute() or return;
+            $sth->finish;
+            return $numrows; #return $sth->rows; should bring the same result, but doesnt
+        }
+        else {
+            delete $dbh->{Statement};
+            my $numrows = DBD::IngresII::db::_do($dbh, $statement);
+            return $numrows ;
+        }
     }
 
     sub prepare {
         my($dbh, $statement, $attribs)= @_;
-	my $ing_readonly = defined($attribs->{ing_readonly}) ?
-		$attribs->{ing_readonly} :
-		scalar $statement !~ /select.*for\s+(?:deferred\s+|direct\s+)?update/is;
+        my $ing_readonly = defined($attribs->{ing_readonly}) ?
+            $attribs->{ing_readonly} :
+            scalar $statement !~ /select.*for\s+(?:deferred\s+|direct\s+)?update/is;
 
         # create a 'blank' sth
         my $sth = DBI::_new_sth($dbh, {
             Statement => $statement,
             ing_statement => $statement,
-	    ing_readonly  => $ing_readonly,
-            });
+            ing_readonly  => $ing_readonly,
+        });
 
         DBD::IngresII::st::_prepare($sth, $statement, $attribs)
             or return;
@@ -184,11 +184,12 @@ DBD::IngresII - DBI driver for Ingres database systems
 
     sub table_info {
         my ($dbh, $catalog, $schema, $table, $type) = @_;
-	$schema = ($schema) ? $schema : q/%/;
-	$table = ($table) ? $table : q/%/;
-	my $sth = $dbh->prepare("
-	  SELECT VARCHAR(null) AS TABLE_CAT, table_owner AS TABLE_SCHEM, table_name, 'TABLE' AS TABLE_TYPE
-	  FROM iitables WHERE table_type='T' AND VARCHAR(table_owner) LIKE '$schema' AND VARCHAR(table_name) LIKE '$table'");
+        $schema = ($schema) ? $schema : q/%/;
+        $table = ($table) ? $table : q/%/;
+        my $sth = $dbh->prepare(qq{
+            SELECT VARCHAR(null) AS TABLE_CAT, table_owner AS TABLE_SCHEM, table_name, 'TABLE' AS TABLE_TYPE
+            FROM iitables WHERE table_type='T' AND VARCHAR(table_owner) LIKE '$schema' AND VARCHAR(table_name) LIKE '$table'
+        });
 #        my $sth = $dbh->prepare("
 #	  SELECT VARCHAR(null) AS TABLE_CAT, table_owner AS TABLE_SCHEM,	                 table_name, 'TABLE' AS TABLE_TYPE
 #	  FROM IITABLES
@@ -204,18 +205,19 @@ DBD::IngresII - DBI driver for Ingres database systems
 
     sub column_info {
         my ($dbh, $catalog, $schema, $table, $column) = @_;
-	$schema = ($schema) ? $schema : q/%/;
-	$table = ($table) ? $table : q/%/;
-	$column = ($column) ? $column : q/%/;
-	my $sth = $dbh->prepare("
-	  SELECT VARCHAR(null) AS TABLE_CAT, table_owner AS TABLE_SCHEM, table_name AS TABLE_NAME, column_name AS COLUMN_NAME,
-	  column_ingdatatype AS DATA_TYPE, column_datatype AS TYPE_NAME, column_length AS COLUMN_SIZE, INT(0) AS BUFFER_LENGTH,
-	  column_scale AS DECIMAL_DIGITS, INT(0) AS NUM_PREC_RADIX, column_nulls AS NULLABLE, VARCHAR('') AS REMARKS,
-	  column_default_val AS COLUMN_DEF, column_datatype AS SQL_DATA_TYPE, VARCHAR(null) AS SQL_DATETIME_SUB,
-	  INT(0) AS CHAR_OCTET_LENGTH, column_sequence AS ORDINAL_POSITION, column_nulls as IS_NULLABLE
-	  FROM iicolumns
-	  WHERE VARCHAR(table_owner) LIKE '$schema' AND VARCHAR(table_name) LIKE '$table' AND VARCHAR(column_name) LIKE '$column'
-	  ORDER BY table_owner, table_name, column_sequence");
+        $schema = ($schema) ? $schema : q/%/;
+        $table = ($table) ? $table : q/%/;
+        $column = ($column) ? $column : q/%/;
+        my $sth = $dbh->prepare(qq{
+            SELECT VARCHAR(null) AS TABLE_CAT, table_owner AS TABLE_SCHEM, table_name AS TABLE_NAME, column_name AS COLUMN_NAME,
+            column_ingdatatype AS DATA_TYPE, column_datatype AS TYPE_NAME, column_length AS COLUMN_SIZE, INT(0) AS BUFFER_LENGTH,
+            column_scale AS DECIMAL_DIGITS, INT(0) AS NUM_PREC_RADIX, column_nulls AS NULLABLE, VARCHAR('') AS REMARKS,
+            column_default_val AS COLUMN_DEF, column_datatype AS SQL_DATA_TYPE, VARCHAR(null) AS SQL_DATETIME_SUB,
+            INT(0) AS CHAR_OCTET_LENGTH, column_sequence AS ORDINAL_POSITION, column_nulls as IS_NULLABLE
+            FROM iicolumns
+            WHERE VARCHAR(table_owner) LIKE '$schema' AND VARCHAR(table_name) LIKE '$table' AND VARCHAR(column_name) LIKE '$column'
+            ORDER BY table_owner, table_name, column_sequence
+        });
         return unless $sth;
         $sth->execute;
         $sth;
@@ -223,26 +225,25 @@ DBD::IngresII - DBI driver for Ingres database systems
 
     sub get_info {
         my ($dbh, $ident) = @_;
-	my $info = '';
-	return unless $ident;
-	if ($ident == 17 ) { return 'Ingres'; }
-	elsif ($ident == 18) { $info = '_version'; }
-	elsif ($ident == 29) { return q{'}; }
-	elsif ($ident == 41) { return '.'; }
-	else { return; }
-	my $sth = $dbh->prepare("SELECT dbmsinfo('$info')");
-        return unless $sth;
-        $sth->execute;
-	my $version = $sth->fetchrow;
-	if ($version =~ /II 10\.1\.0/) { return '10.1'; }
-    elsif  ($version =~ /II 10\.0\.0/) { return '10.0'; }
-    elsif ($version =~ /II 9\.3\.0/) { return '9.3'; }
-	elsif ($version =~ /II 9\.2\.0/) { return '2006 R3'; }
-	elsif ($version =~ /II 9\.1\.0/) { return '2006 R2'; }
-	elsif ($version =~ /II 9\.0\.4/) { return '2006'; }
-	else { return 'unknown';}
-#	return $version;
-    }
+        my $info = '';
+        return unless $ident;
+        if ($ident == 17 ) { return 'Ingres'; }
+        elsif ($ident == 18) { $info = '_version'; }
+        elsif ($ident == 29) { return q{'}; }
+        elsif ($ident == 41) { return '.'; }
+        else { return; }
+        my $sth = $dbh->prepare("SELECT dbmsinfo('$info')");
+            return unless $sth;
+            $sth->execute;
+        my $version = $sth->fetchrow;
+        if ($version =~ /II 10\.1\.0/) { return '10.1'; }
+        elsif ($version =~ /II 10\.0\.0/) { return '10.0'; }
+        elsif ($version =~ /II 9\.3\.0/) { return '9.3'; }
+        elsif ($version =~ /II 9\.2\.0/) { return '2006 R3'; }
+        elsif ($version =~ /II 9\.1\.0/) { return '2006 R2'; }
+        elsif ($version =~ /II 9\.0\.4/) { return '2006'; }
+        else { return 'unknown';}
+  }
 
 
     sub ping {
@@ -254,78 +255,79 @@ DBD::IngresII - DBI driver for Ingres database systems
     }
 
     sub type_info_all {
-    	my ($dbh) = @_;
-    	my $ti = [
-    	    {   TYPE_NAME       => 0,
-                DATA_TYPE       => 1,
-		COLUMN_SIZE	=> 2,
-                LITERAL_PREFIX  => 3,
-                LITERAL_SUFFIX  => 4,
-                CREATE_PARAMS   => 5,
-                NULLABLE        => 6,
-                CASE_SENSITIVE  => 7,
-                SEARCHABLE      => 8,
-                UNSIGNED_ATTRIBUTE=> 9,
-		FIXED_PREC_SCALE=> 10,
-		AUTO_UNIQUE_VALUE=> 11,
-                LOCAL_TYPE_NAME => 12,
-                MINIMUM_SCALE   => 13,
-                MAXIMUM_SCALE   => 14,
-		SQL_DATA_TYPE	=> 15,
-		SQL_DATETIME_SUB=> 16,
-		NUM_PREC_RADIX	=> 17,
-		INTERVAL_PRECISIO=> 18,
-    	    },
-    	    [ 'SMALLINT',     DBI::SQL_SMALLINT,
-	      undef, "","",  undef, 1, 0, 2, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
-    	    [ 'INTEGER',      DBI::SQL_INTEGER,
-	      undef, "","", "size=1,2,4", 1, 0, 2, 0, 0 ,0 ,undef ,0 ,0, undef, undef, undef, undef ],
-    	    [ 'MONEY',        DBI::SQL_DECIMAL,
-	      undef, "","",  undef, 1, 0, 2, 0, 1, 0, undef, 0, 0, undef, undef, undef, undef ],
-    	    [ 'FLOAT',        DBI::SQL_DOUBLE,
-	      undef, "","", "size=4,8", 1, 0, 2, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
-    	    [ 'ANSIDATE',     DBI::SQL_DATE,
-	      undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
-    	    [ 'DECIMAL',      DBI::SQL_DECIMAL,
-	      undef, "","", "precision,scale", 1, 0, 2, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
-    	    [ 'VARCHAR',      DBI::SQL_VARCHAR,
-	      undef, "'","'", "max length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
-    	    [ 'BOOLEAN',      DBI::SQL_INTEGER,
-	      undef, "","", undef, 1, 0, 2, 0, 0 ,0 ,undef ,0 ,0, undef, undef, undef, undef ],
-    	    [ 'BYTE VARYING', DBI::SQL_VARBINARY,
-	      undef, "'","'", "max length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
-    	    [ 'C',         DBI::SQL_CHAR,
-	      undef, "'","'", "length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
-    	    [ 'CHAR',         DBI::SQL_CHAR,
-	      undef, "'","'", "length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+        my ($dbh) = @_;
+        my $ti = [
+            {   
+                TYPE_NAME          => 0,
+                DATA_TYPE          => 1,
+                COLUMN_SIZE        => 2,
+                LITERAL_PREFIX     => 3,
+                LITERAL_SUFFIX     => 4,
+                CREATE_PARAMS      => 5,
+                NULLABLE           => 6,
+                CASE_SENSITIVE     => 7,
+                SEARCHABLE         => 8,
+                UNSIGNED_ATTRIBUTE => 9,
+                FIXED_PREC_SCALE   => 10,
+                AUTO_UNIQUE_VALUE  => 11,
+                LOCAL_TYPE_NAME    => 12,
+                MINIMUM_SCALE      => 13,
+                MAXIMUM_SCALE      => 14,
+                SQL_DATA_TYPE      => 15,
+                SQL_DATETIME_SUB   => 16,
+                NUM_PREC_RADIX     => 17,
+                INTERVAL_PRECISIO  => 18,
+            },
+            [ 'SMALLINT',     DBI::SQL_SMALLINT,
+                undef, "","",  undef, 1, 0, 2, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+            [ 'INTEGER',      DBI::SQL_INTEGER,
+                undef, "","", "size=1,2,4", 1, 0, 2, 0, 0 ,0 ,undef ,0 ,0, undef, undef, undef, undef ],
+            [ 'MONEY',        DBI::SQL_DECIMAL,
+                undef, "","",  undef, 1, 0, 2, 0, 1, 0, undef, 0, 0, undef, undef, undef, undef ],
+            [ 'FLOAT',        DBI::SQL_DOUBLE,
+                undef, "","", "size=4,8", 1, 0, 2, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+            [ 'ANSIDATE',     DBI::SQL_DATE,
+                undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+            [ 'DECIMAL',      DBI::SQL_DECIMAL,
+                undef, "","", "precision,scale", 1, 0, 2, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+            [ 'VARCHAR',      DBI::SQL_VARCHAR,
+                undef, "'","'", "max length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+            [ 'BOOLEAN',      DBI::SQL_INTEGER,
+                undef, "","", undef, 1, 0, 2, 0, 0 ,0 ,undef ,0 ,0, undef, undef, undef, undef ],
+            [ 'BYTE VARYING', DBI::SQL_VARBINARY,
+                undef, "'","'", "max length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+            [ 'C',         DBI::SQL_CHAR,
+                undef, "'","'", "length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+            [ 'CHAR',         DBI::SQL_CHAR,
+                undef, "'","'", "length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
             [ 'NCHAR',         DBI::SQL_BINARY,
-	      undef, "'","'", "length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+                undef, "'","'", "length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
             [ 'NVARCHAR',      DBI::SQL_VARBINARY,
-	      undef, "'","'", "length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
-    	    [ 'BYTE',         DBI::SQL_BINARY,
-	      undef, "'","'", "length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
-    	    [ 'LONG VARCHAR', DBI::SQL_LONGVARCHAR,
-	      undef, undef, undef, undef, 1, 1, 0, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
-    	    [ 'LONG BYTE',    DBI::SQL_LONGVARBINARY,
-	      undef, undef, undef, undef, 1, 1, 0, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+                undef, "'","'", "length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+            [ 'BYTE',         DBI::SQL_BINARY,
+                undef, "'","'", "length", 1, 1, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+            [ 'LONG VARCHAR', DBI::SQL_LONGVARCHAR,
+                undef, undef, undef, undef, 1, 1, 0, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+            [ 'LONG BYTE',    DBI::SQL_LONGVARBINARY,
+                undef, undef, undef, undef, 1, 1, 0, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
             [ 'TIMESTAMP',    DBI::SQL_DATETIME,
-	      undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+                undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
             [ 'TIMESTAMP WITH TIME ZONE',    DBI::SQL_DATETIME,
-	      undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+                undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
             [ 'TIMESTAMP WITH LOCAL TIME ZONE',    DBI::SQL_DATETIME,
-	      undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+                undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
             [ 'TIME',    DBI::SQL_TIME,
-	      undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+                undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
             [ 'TIME WITH TIME ZONE',    DBI::SQL_TIME,
-	      undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+                undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
             [ 'TIME WITH LOCAL TIME ZONE',    DBI::SQL_TIME,
-	      undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+                undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
             [ 'INTERVAL YEAR TO MONTH',    DBI::SQL_INTERVAL_YEAR_TO_MONTH,
-	      undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+                undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
             [ 'INTERVAL DAY TO SECOND',    DBI::SQL_INTERVAL_DAY_TO_SECOND,
-	      undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
-    	];
-    	return $ti;
+                undef, "'","'", undef, 1, 0, 3, 0, 0, 0, undef, 0, 0, undef, undef, undef, undef ],
+        ];
+        return $ti;
     }
 
     sub ing_utf8_quote {
@@ -395,6 +397,8 @@ DBD::IngresII - DBI driver for Ingres database systems
 }
 
 1;
+
+__END__
 
 =encoding utf8
 
@@ -1178,9 +1182,9 @@ Myself - C<xenu@poczta.onet.pl>
 
 =head1 GIT REPOSITORY
 
-You can access latest development version of DBD::IngresII on github:
+You can access latest development version of DBD::IngresII on CodePlex:
 
-    https://github.com/xenu/dbd-ingresii
+    http://dbdingresii.codeplex.com
 
 =head1 REPORTING BUGS
 
