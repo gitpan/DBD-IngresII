@@ -1,3 +1,6 @@
+v0.81     2012.08.11
+ - Fixed memory allocation for NCHAR/NVARCHAR
+ - There was one typo which was breaking POD
 v0.80     2012.07.20
  - sql_check() has bigger buffer
  - No more malloc() and free()

@@ -8,7 +8,7 @@
 require 5.008_008;
 
 =head1 NAME
-z
+
 DBD::IngresII - DBI driver for Ingres database systems
 
 =head1 SYNOPSIS
@@ -40,7 +40,7 @@ DBD::IngresII - DBI driver for Ingres database systems
     
     our @ISA = qw(DynaLoader);
 
-    our $VERSION = '0.80';
+    our $VERSION = '0.81';
     my $Revision = substr(q$Change: 18308 $, 8)/100;
 
     bootstrap DBD::IngresII $VERSION;

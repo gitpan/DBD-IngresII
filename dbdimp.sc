@@ -1144,7 +1144,7 @@ dbd_describe(sth, imp_sth)
             var->sqltype = IISQ_NVCHR_TYPE;
             fbh->len = var->sqllen;
             strcpy(fbh->type, "n");
-            fbh->sv = newSV((STRLEN)fbh->len + sizeof(short));
+            fbh->sv = newSV((STRLEN)(fbh->len * 2) + sizeof(short));
             SvOK_off(fbh->sv);
             var->sqldata = SvPVX(fbh->sv);
             break;
