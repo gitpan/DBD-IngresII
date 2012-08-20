@@ -1,11 +1,12 @@
 #!/usr/local/bin/perl -sw
 
-require 5.004;
+require 5.008_008;
+
+use strict;
 
 use ExtUtils::MakeMaker 5.38, qw(&WriteMakefile $Verbose);
 use Getopt::Long;
 use Config;
-use strict;
 
 # Some MakeMaker's forged some FileHandle methods
 require FileHandle unless defined(&FileHandle::new);
@@ -97,19 +98,6 @@ Place it in $II_SYSTEM\\ingres\\lib and run DBD::IngresII installation again.
     }
 }
 
-# no longer needed?
-# Adjust linkwith (some 6.4 versions have the name of the library in abfopt.opt
-#for ($linkwith) {
-#   s{(/.*)/lib(.*?)\.a}{-L$1 -l$2};
-#}
-
-# (obsolete)Try to figure out if this is an OpenIngres or not 
-#unless (defined $OpenIngres) {
-#    $OpenIngres = defined(-f "$II_SYSTEM/ingres/lib/libcompat.1.so");
-#    print "OpenIngres detected\n" if $OpenIngres;
-#}
-
-
 my $linkopt = "";
 
 # --- Handle special cases ---
@@ -132,7 +120,6 @@ if ($Is_VMS) {
     $linkwith = "";
     $libhome = "";
     $ESQLC = "ESQLC";
-    #$OpenIngres = -r "II_SYSTEM:[INGRES.FILES]CONFIG.DAT"; #(obsolete)
 } elsif ($Is_NT) {
     $ESQLC = $ENV{ESQLC} ||"\"$II_SYSTEM\\ingres\\bin\\esqlc.exe\"";
 } else {
@@ -197,21 +184,10 @@ $opts{macro} = { ESQLC => $ESQLC, ESQLCOPT => "-o.h -w -p" };
 #$opts{DEFINE} = '-DOPENINGRES' if $OpenIngres; #(obsolete)
 WriteMakefile(%opts);
 
-sub MY::post_initialize {
-    my $self = shift;
-    # (obsolete) Ensure Ingperl.pm and ingperl.pl are installed into top lib dir
-    # $self->{PM}->{'Ingperl.pm'} = '$(INST_LIB)/Ingperl.pm';
-    # $self->{PM}->{'ingperl.pl'} = '$(INST_LIB)/ingperl.pl';
-    '';
-}
-
 sub MY::postamble {
     # Note this is not quite in accordance with the DBD-writer specs.
     # Mainly due to attempts to cater for 'wierd' DBI locations.
     # (obsolete)
-    #my $subst = $OpenIngres ?
-	#	    's!/\\*OI\\*!!' :    # Turn on OpenIngres or 
-	#	    's!/\\*64\\*!!';     # Ingres 6.4 parts of dbdimp.psc
 
     my $driver_xst_path = $DBIXS_INSTALL_DIR."/Driver.xst";
     if ($Is_VMS) {

@@ -22,6 +22,22 @@ DBISTATE_DECLARE;
 static int cur_session;    /* the 'current' Ingres session_id */
 static int nxt_session;    /* the next 'available' session_id */
 
+#ifdef _WIN32
+
+/* On Windows, ^C does not work when DBD::IngresII fetches row containing
+ * DECIMAL column, probably due to bug in Ingres. As a workaround, I have
+ * registered this function as CTRL-C handler using SetConsoleCtrlHandler()
+ * WINAPI function. 
+ */
+
+static void
+dummy_ctrl_c_handler()
+{
+    ExitProcess(2);
+}
+
+#endif
+
 static short
 is_ascii(s, len)
     U8 *s;
@@ -296,9 +312,22 @@ dbd_db_login(dbh, imp_dbh, dbname, user, pass)
     imp_dbh->trans_no = 1;
 
     opt = dbname;
+    
+    if (dbname[0]=='@')
+    {
+      /* Dynamic vnode specification - may include attributes which */
+      /* are delimited by semicolons and are specified before ::dbname. */
+      /* Not to be confused with any options listed after a semicolon */
+      /* following the dbname. Skip option ptr along to the "::" */ 
+      while (*opt && !((*opt == ':') && (*(opt - 1) == ':')))
+          ++opt;
+    }
+
     /* look for options in dbname. Syntax: dbname;options */
+
     while (*opt && *opt != ';')
         ++opt;
+
     if (*opt == ';')
     {
         *opt = 0; /* terminate dbname */
@@ -1073,7 +1102,7 @@ dbd_describe(sth, imp_sth)
             strcpy(fbh->type, "d");
             fbh->sv = newSV((STRLEN)fbh->len);
             SvOK_off(fbh->sv);
-            var->sqldata = (char *)SvPVX(fbh->sv);
+            var->sqldata = SvPVX(fbh->sv);
             break;
         case IISQ_INT_TYPE:
             var->sqltype = IISQ_INT_TYPE;
@@ -1300,6 +1329,7 @@ dbd_bind_ph (sth, imp_sth, param, value, sql_type, attribs, is_inout, maxlen)
         if (sql_type)
             switch (sql_type)
             {
+            case SQL_BOOLEAN:
             case SQL_INTEGER:
             case SQL_SMALLINT:
                 type = 1; break;
@@ -1349,7 +1379,7 @@ dbd_bind_ph (sth, imp_sth, param, value, sql_type, attribs, is_inout, maxlen)
          * don't have to worry about the 0 case. */
     /* addition: now you have to :( */
     case 1: /* int */
-        if ((var->sqltype = IISQ_BOO_TYPE) || (var->sqltype = -IISQ_BOO_TYPE))
+        if (var->sqltype == IISQ_BOO_TYPE)
         {
             var->sqllen = sizeof(int);
             Renew(var->sqldata, var->sqllen, char);
@@ -1611,7 +1641,7 @@ dbd_st_fetch(sth, imp_sth)
             switch (fbh->type[0])
             {
             case 'd':
-                if ((var->sqltype == IISQ_BOO_TYPE) || (var->sqltype == -IISQ_BOO_TYPE))
+                if (abs(var->sqltype) == IISQ_BOO_TYPE)
                     sv_setiv(sv, *(int*)var->sqldata);
                 else
                     sv_setiv(sv, *(IV*)var->sqldata);
@@ -1654,15 +1684,23 @@ dbd_st_fetch(sth, imp_sth)
                 }
             case 'n':
                 {
-                    U16 *utf16;  /* used only */
-                    short i = 0; /* with 32-bit */
-                    short e = 0; /* wchar_t */
+                    U16 *utf16;
+                    U8 *utf16_bytes;
                     short len = *(short *)var->sqldata;
                     U16 *buf = (U16 *)(var->sqldata + sizeof(short));
 
                     if (sizeof(wchar_t) == 4)
                     {
+                        /* For NCHAR type, Ingres always returns UTF-16 stored in low 16 bits
+                         * of wchar_t, so if sizeof(wchar_t) == 2 there is no problem. On
+                         * platforms with 32-bit wchar_t we only need to get low 16 bits.
+                         */
+                           
+                        short i = 0;
+                        short e = 0;
+
                         Newx(utf16, len, U16);
+
                         while ((len * sizeof(U16)) > i)
                         {
                             if (i % 2 != 0)
@@ -1673,24 +1711,46 @@ dbd_st_fetch(sth, imp_sth)
                             ++i;
                         }
                         sv_setpvn(sv, (char *)utf16, len * sizeof(U16));
-                        Safefree(utf16);
                     }
                     else if (sizeof(wchar_t) == 2)
-                        sv_setpvn(sv, (char *)buf, len * sizeof(U16));
+                    {
+                        utf16 = buf;
+                        sv_setpvn(sv, (char *)utf16, len * sizeof(U16));
+                    }
                     else
                     {
-                        sv_setpvn(sv, (char *)buf, len * sizeof(U16));
+                        /* Uh-Oh, We're In Trouble, 
+                         * Something's Come Along And It's Burst Our Bubble
+                         */
+                        utf16 = buf;
+                        sv_setpvn(sv, (char *)utf16, len * sizeof(U16));
                         if (dbis->debug >= 3)
                             PerlIO_printf(DBILOGFP,
-                                "wchar_t has unsupported size %lu, DBD::IngresII will probably output garbage",
+                                "wchar_t has unsupported size %lu, DBD::IngresII will probably output garbage\n",
                                 (unsigned long)sizeof(wchar_t));
                     }
 
                     if (dbis->debug >= 3)
                     {
-                        PerlIO_printf(DBILOGFP, "Text (UTF-16): '");
-                        PerlIO_write(DBILOGFP, buf, len);
+                        char *utf16_hex;
+                        U8 *utf16_bytes = (U8*)utf16;
+                        int i = 0;
+                        
+                        Newx(utf16_hex, (len * 4) + 1, char);
+                        
+                        while ((len * sizeof(U16)) > i)
+                        {
+                            sprintf(utf16_hex + (i * 2), "%02x", (U8)utf16_bytes[i]);
+                            ++i;
+                        }
+
+                        PerlIO_printf(DBILOGFP, "Text bytes (UTF-16, converted to hex): '%s'", utf16_hex);
+
+                        Safefree(utf16_hex);
                     }
+
+                    if (sizeof(wchar_t) == 4)
+                        Safefree(utf16);
                     break;
                 }
             case 'l':
@@ -1710,6 +1770,18 @@ dbd_st_fetch(sth, imp_sth)
             }
         }
     }
+
+    #ifdef _WIN32
+
+    /* See somment above dummy_ctrl_c_handler() function */
+    SetConsoleCtrlHandler(NULL, FALSE);
+    SetConsoleCtrlHandler(dummy_ctrl_c_handler, TRUE);
+
+    if (dbis->debug >= 3)
+        PerlIO_printf(DBILOGFP, "Installed dummy CTRL+C handler as workaround to bug in Ingres \n");
+
+    #endif
+
     if (dbis->debug >= 3)
         PerlIO_printf(DBILOGFP, "    End fetch\n");
     return av;

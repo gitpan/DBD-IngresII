@@ -17,6 +17,10 @@
 #include <DBIXS.h>              /* installed by the DBI module  */
 #include <dbd_xsh.h>            /* ditto  */
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 EXEC SQL INCLUDE SQLDA;
 EXEC SQL INCLUDE SQLCA;
 

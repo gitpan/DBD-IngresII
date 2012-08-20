@@ -40,7 +40,7 @@ DBD::IngresII - DBI driver for Ingres database systems
     
     our @ISA = qw(DynaLoader);
 
-    our $VERSION = '0.81';
+    our $VERSION = '0.82';
     my $Revision = substr(q$Change: 18308 $, 8)/100;
 
     bootstrap DBD::IngresII $VERSION;
@@ -445,6 +445,12 @@ local database
 with options and no password
 
   DBI->connect("DBI:IngresII:mydb;-Rmyrole/myrolepassword", "me")
+
+=item *
+
+dynamic vnode
+
+  DBI->connect("DBI:IngresII:@localhost,tcp_ip,II;[login,password]::dbname")
 
 =item *
 
@@ -1176,7 +1182,7 @@ Ingres usenet group - C<comp.databases.ingres>
 
 =item *
 
-Myself - C<xenu@poczta.onet.pl>
+Myself - C<me@xenu.tk>
 
 =back
 
@@ -1200,10 +1206,6 @@ that you are using (i.e. "ActivePerl" or "Strawberry Perl").
 
 TODO
 
-=head1 SEE ALSO
-
-The DBI documentation in L<DBI> and L<DBI::DBD>.
-
 =head1 AUTHORS
 
 DBI/DBD was developed by Tim Bunce, <Tim.Bunce@ig.co.uk>, who also
@@ -1215,6 +1217,67 @@ Henrik Tougaard, <htoug@cpan.org> developed the DBD::Ingres extension.
 Stefan Reddig, <sreagle@cpan.org> is currently (2008) adopting it to
 include some more features.
 
-Tomasz Konojacki has forked DBD::Ingres to DBD::IngresII.
+Tomasz Konojacki <me@xenu.tk> has forked DBD::Ingres to DBD::IngresII.
+
+=head1 CONTRIBUTORS
+
+Sorted from latest contribution to first one. If I forgot about someone, mail me
+at me@xenu.tk.
+
+=over 4
+
+=item *
+
+Geraint Jones
+
+=item *
+
+Remy Chibois
+
+=item *
+
+Dirk Kraemer
+
+=item *
+
+Sebastian Bazley
+
+=item *
+
+Bernard Royet
+
+=item *
+
+Bruce W. Hoylman
+
+=item *
+
+Alan Murray
+
+=item *
+
+Dirk Koopman
+
+=item *
+
+Ulrich Pfeifer
+
+=item *
+
+Jochen Wiedmann
+
+=item *
+
+Gil Hirsch
+
+=item *
+
+Paul Lindner
+
+=back
 
 =cut
+
+=head1 SEE ALSO
+
+The DBI documentation in L<DBI> and L<DBI::DBD>.
