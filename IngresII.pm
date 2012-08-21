@@ -40,7 +40,7 @@ DBD::IngresII - DBI driver for Ingres database systems
     
     our @ISA = qw(DynaLoader);
 
-    our $VERSION = '0.82';
+    our $VERSION = '0.83';
     my $Revision = substr(q$Change: 18308 $, 8)/100;
 
     bootstrap DBD::IngresII $VERSION;
@@ -910,6 +910,7 @@ which can be interpreted as valid UTF-8 (but not as valid ASCII), will have
 scalar's ("scalar" means "variable" in Perl world) UTF-8 flag set on.
 
 Note that you should use this attribute only if C<II_CHARSET> is set to C<UTF8>.
+
 =head1 FEATURES NOT IMPLEMENTED
 
 =head2 state
