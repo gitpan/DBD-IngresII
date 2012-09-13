@@ -1,3 +1,7 @@
+v0.84     2012.09.13
+ - Added casting, so SetConsoleCtrlHandler() won't complain
+ - Tests for BOOLEAN type are now optional
+ - Added information about PPM repository to documentation
 v0.83     2012.08.21
  - Just POD fixes
 v0.82     2012.08.20

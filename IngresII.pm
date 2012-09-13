@@ -40,8 +40,7 @@ DBD::IngresII - DBI driver for Ingres database systems
     
     our @ISA = qw(DynaLoader);
 
-    our $VERSION = '0.83';
-    my $Revision = substr(q$Change: 18308 $, 8)/100;
+    our $VERSION = '0.84';
 
     bootstrap DBD::IngresII $VERSION;
 
@@ -1186,6 +1185,14 @@ Ingres usenet group - C<comp.databases.ingres>
 Myself - C<me@xenu.tk>
 
 =back
+
+=head1 BINARY BUILDS (PPM REPOSITORY)
+
+You can download binary builds of DBD::IngresII using PPM repository at:
+
+    http://ppm.xenu.tk
+
+Builds are provided only for Windows version of ActivePerl.
 
 =head1 GIT REPOSITORY
 

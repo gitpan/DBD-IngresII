@@ -1775,7 +1775,7 @@ dbd_st_fetch(sth, imp_sth)
 
     /* See somment above dummy_ctrl_c_handler() function */
     SetConsoleCtrlHandler(NULL, FALSE);
-    SetConsoleCtrlHandler(dummy_ctrl_c_handler, TRUE);
+    SetConsoleCtrlHandler((PHANDLER_ROUTINE)dummy_ctrl_c_handler, TRUE);
 
     if (dbis->debug >= 3)
         PerlIO_printf(DBILOGFP, "Installed dummy CTRL+C handler as workaround to bug in Ingres \n");

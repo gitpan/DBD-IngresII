@@ -42,7 +42,7 @@ unless (defined $dbname) {
 }
 else {
     #plan tests => 4;
-    plan tests => (4 + ($#{DBD::IngresII::db->type_info_all()} - 2) * 23);
+    plan tests => (4 + ($#{DBD::IngresII::db->type_info_all()} - 3) * 23);
 }
 
 my $dbh = connect_db($dbname);
@@ -81,7 +81,6 @@ my %testvals = (
     'DECIMAL'                        => 98,
     'VARCHAR'                        => 'Apricot' x 3,
     'BYTE VARYING'                   => "Ab\0" x 10,
-    'BOOLEAN'                        => 1,
     'C'                              => 'aBc',
     'CHAR'                           => 'AaBb',
     'BYTE'                           => "\3\0\2\1",
@@ -110,6 +109,7 @@ for (1..$#{$types}) {
     my $cursor;
 
     next if (($name eq 'NCHAR') || ($name eq 'NVARCHAR'));
+    next if ($name eq 'BOOLEAN');
 
     unless ($val) {
 	    die "No default value for type $name\n";
