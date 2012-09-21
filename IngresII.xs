@@ -13,7 +13,7 @@ DBISTATE_DECLARE;
  
 MODULE = DBD::IngresII    PACKAGE = DBD::IngresII
 
-INCLUDE: IngresII.xsi
+INCLUDE: IngresII.xsh
 
 MODULE = DBD::IngresII    PACKAGE = DBD::IngresII::db
 

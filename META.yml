@@ -1,8 +1,9 @@
 --- #YAML:1.0
 name:               DBD-IngresII
-version:            0.84
-abstract:           ~
-author:  []
+version:            0.85
+abstract:           DBI driver for Ingres database systems
+author:
+    - Henrik Tougaard (htoug@cpan.org)
 license:            unknown
 distribution_type:  module
 configure_requires:
@@ -10,9 +11,8 @@ configure_requires:
 build_requires:
     ExtUtils::MakeMaker:  0
 requires:
-    Config:        0
-    DBI:           1
-    Getopt::Long:  0
+    Config:  0
+    DBI:     0
 no_index:
     directory:
         - t

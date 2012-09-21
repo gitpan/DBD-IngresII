@@ -736,7 +736,7 @@ dbd_st_prepare(sth, imp_sth, statement, attribs)
 
     imp_sth->done_desc = 0;
     sqlda = &imp_sth->sqlda;
-    strcpy(sqlda->sqldaid, "SQLDA   ");
+    strcpy(sqlda->sqldaid, "SQLDA  ");
     sqlda->sqldabc = sizeof(IISQLDA);
     sqlda->sqln = IISQ_MAX_COLS;
     { /* Make a statement name - contains unique number +
@@ -834,7 +834,7 @@ dbd_st_prepare(sth, imp_sth, statement, attribs)
     if (DBIc_NUM_PARAMS(imp_sth) > 0)
     {
         IISQLDA *sqlda = &imp_sth->ph_sqlda;
-        strcpy(sqlda->sqldaid, "SQLDA   ");
+        strcpy(sqlda->sqldaid, "SQLDA  ");
         sqlda->sqldabc = sizeof(IISQLDA);
         sqlda->sqln = IISQ_MAX_COLS;
         {

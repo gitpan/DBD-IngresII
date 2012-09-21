@@ -40,7 +40,7 @@ DBD::IngresII - DBI driver for Ingres database systems
     
     our @ISA = qw(DynaLoader);
 
-    our $VERSION = '0.84';
+    our $VERSION = '0.85';
 
     bootstrap DBD::IngresII $VERSION;
 
@@ -1194,11 +1194,11 @@ You can download binary builds of DBD::IngresII using PPM repository at:
 
 Builds are provided only for Windows version of ActivePerl.
 
-=head1 GIT REPOSITORY
+=head1 PERFORCE REPOSITORY
 
-You can access latest development version of DBD::IngresII on CodePlex:
+You can access latest development version of DBD::IngresII on Assembla:
 
-    http://dbdingresii.codeplex.com
+    https://www.assembla.com/code/dbd-ingresii/perforce/nodes
 
 =head1 REPORTING BUGS
 

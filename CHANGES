@@ -1,3 +1,6 @@
+v0.85     2012.09.21
+ - Fixed two buffer overflow errors
+ - Makefile.PL is rewritten from scratch
 v0.84     2012.09.13
  - Added casting, so SetConsoleCtrlHandler() won't complain
  - Tests for BOOLEAN type are now optional
