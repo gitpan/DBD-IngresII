@@ -46,14 +46,26 @@ else {
 my $dbh = connect_db($dbname);
 my $event;
 
-ok($dbh->do(qq[
-        CREATE TABLE $testtable (
-            id INTEGER4,
-            name CHAR(64)
-        )
-    ]),
-    "Testing $testtable table creation"
-);
+if ($dbh->ing_is_vectorwise) {
+    ok($dbh->do(qq[
+            CREATE TABLE $testtable (
+                id INTEGER4,
+                name CHAR(64)
+            ) WITH STRUCTURE=HEAP
+        ]),
+        "Testing $testtable table creation"
+    );
+}
+else {
+    ok($dbh->do(qq[
+            CREATE TABLE $testtable (
+                id INTEGER4,
+                name CHAR(64)
+            )
+        ]),
+        "Testing $testtable table creation"
+    );
+}
 
 
 ok($dbh->do(q[

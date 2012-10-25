@@ -43,7 +43,7 @@ is_ascii(s, len)
     U8 *s;
     STRLEN len;
 {
-    int i = 0;
+    STRLEN i = 0;
     while (len > i)
     {
         if (s[i] >> 7)
@@ -739,58 +739,10 @@ dbd_st_prepare(sth, imp_sth, statement, attribs)
     strcpy(sqlda->sqldaid, "SQLDA  ");
     sqlda->sqldabc = sizeof(IISQLDA);
     sqlda->sqln = IISQ_MAX_COLS;
-    { /* Make a statement name - contains unique number +
-         first part of statement */
-        char *p = statement;
-        char *n;
-    /* find first DML letter */
-        while (*p && *p != 's' && *p != 'S' && *p != 'i' && *p != 'I' &&
-         *p != 'd' && *p != 'D' && *p != 'u' && *p != 'U')
-        {
-            ++p;
-        }
-        if (dbis->debug >= 4)
-            PerlIO_printf(DBILOGFP, "Statement = %s \n", p);
-    /* points past DML keyword (select,insert into,delete from,update */
-        switch (*p)
-        {
-        case 's':
-        case 'S':
-        case 'u':
-        case 'U':
-            p += 6;
-            break;
-        case 'i':
-        case 'I':
-        case 'd':
-        case 'D':
-            p += 11;
-            break;
-        }
-        if (dbis->debug >= 4)
-            PerlIO_printf(DBILOGFP, "Statement2 = %s \n", p);
-        while (*p && *p <= 32)
-            ++p; /* past any whitespace */
-        if (dbis->debug >= 4)
-            PerlIO_printf(DBILOGFP, "Statement3 = %s \n", p);
-        generate_statement_name(&imp_sth->st_num, name);
-        if (dbis->debug >= 4)
-            PerlIO_printf(DBILOGFP, "Name = %s \n", name);
-        n = name + strlen(name); /* points at \0 at end */
-        if (dbis->debug >= 4)
-            PerlIO_printf(DBILOGFP, "Name1 = %s \n", n);
-        *n++ = '_';
-        if (dbis->debug >= 4)
-            PerlIO_printf(DBILOGFP, "Name2 = %s \n", n);
-        while (*p && n < (name+23))
-        {
-            if (isalnum(*p))
-                *n++ = *p;
-            ++p;
-        }
-        *n = 0;
-        imp_sth->name = savepv(name);
-    }
+
+    generate_statement_name(&imp_sth->st_num, name);
+    imp_sth->name = savepv(name);
+
     if (dbis->debug >= 3)
         PerlIO_printf(DBILOGFP,
             "DBD::Ingres::dbd_st_prepare stmt('%s') name:%s, sqlda: %p\n",
@@ -1685,10 +1637,9 @@ dbd_st_fetch(sth, imp_sth)
             case 'n':
                 {
                     U16 *utf16;
-                    U8 *utf16_bytes;
                     short len = *(short *)var->sqldata;
                     U16 *buf = (U16 *)(var->sqldata + sizeof(short));
-
+                    
                     if (sizeof(wchar_t) == 4)
                     {
                         /* For NCHAR type, Ingres always returns UTF-16 stored in low 16 bits
@@ -1701,7 +1652,7 @@ dbd_st_fetch(sth, imp_sth)
 
                         Newx(utf16, len, U16);
 
-                        while ((len * sizeof(U16)) > i)
+                        while ((len * (short)sizeof(U16)) > i)
                         {
                             if (i % 2 != 0)
                             {
@@ -1738,7 +1689,7 @@ dbd_st_fetch(sth, imp_sth)
                         
                         Newx(utf16_hex, (len * 4) + 1, char);
                         
-                        while ((len * sizeof(U16)) > i)
+                        while ((len * (short)sizeof(U16)) > i)
                         {
                             sprintf(utf16_hex + (i * 2), "%02x", (U8)utf16_bytes[i]);
                             ++i;
@@ -1773,7 +1724,7 @@ dbd_st_fetch(sth, imp_sth)
 
     #ifdef _WIN32
 
-    /* See somment above dummy_ctrl_c_handler() function */
+    /* See comment above dummy_ctrl_c_handler() function */
     SetConsoleCtrlHandler(NULL, FALSE);
     SetConsoleCtrlHandler((PHANDLER_ROUTINE)dummy_ctrl_c_handler, TRUE);
 

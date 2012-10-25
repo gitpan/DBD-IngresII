@@ -53,7 +53,14 @@ my $dbh = connect_db($dbname);
 eval { local $dbh->{RaiseError}=0;
        local $dbh->{PrintError}=0;
        $dbh->do("DROP TABLE $testtable"); };
-ok($dbh->do("CREATE TABLE $testtable(id INTEGER4 not null, name CHAR(64))"), "Basic create table");
+
+if ($dbh->ing_is_vectorwise) {
+    ok($dbh->do("CREATE TABLE $testtable(id INTEGER4 not null, name CHAR(64)) WITH STRUCTURE=HEAP"), "Basic create table");
+}
+else {
+    ok($dbh->do("CREATE TABLE $testtable(id INTEGER4 not null, name CHAR(64))"), "Basic create table");
+}
+
 ok($dbh->do("INSERT INTO $testtable VALUES(1, 'Alligator Descartes')"), "Basic insert(value)");
 ok($dbh->do("DELETE FROM $testtable WHERE id = 1"), "Basic Delete");
 ok($dbh->do("DROP TABLE $testtable" ), "Basic drop table");
@@ -122,7 +129,7 @@ for (1..$#{$types}) {
     elsif ($params && $params =~ /length/) {
 	    $name .= '(64)';
 	    $val = sprintf('%-64s', $val);
-    } 
+    }
     elsif ($params && $params =~ /size=/) {
 	    $params =~ s/.*size=([0-9,]*).*/$1/;
 	    my @sizes = split(/,/, $params);
@@ -130,8 +137,14 @@ for (1..$#{$types}) {
     }
 
     # CREATE TABLE OF APPROPRIATE TYPE
-    ok($dbh->do("CREATE TABLE $testtable (val $name)"),
-	  "Create table ($name)");
+    if ($dbh->ing_is_vectorwise) {
+        ok($dbh->do("CREATE TABLE $testtable (val $name) WITH STRUCTURE=HEAP"),
+	      "Create table ($name)");
+    }
+    else {
+        ok($dbh->do("CREATE TABLE $testtable (val $name)"),
+	      "Create table ($name)");
+    }
 
     # INSERT BOUND VALUE
     ok($cursor = $dbh->prepare("INSERT INTO $testtable VALUES (?)"),
@@ -153,7 +166,7 @@ for (1..$#{$types}) {
 	  "Select prepare ($name)");
     ok($cursor->execute,
 	  "Select execute ($name)");
-    my $ar = $cursor->fetchrow_arrayref; 
+    my $ar = $cursor->fetchrow_arrayref;
     ok($ar && $ar->[0] eq $val,
 	  "Select fetch ($name)")
 	or print STDERR "Got '$ar->[0]', expected '$val'.\n";
@@ -170,7 +183,7 @@ for (1..$#{$types}) {
     	undef $destroyval;
     	ok($cursor->execute,
     	      "Select with bound selector execute ($name)");
-    	$ar = $cursor->fetchrow_arrayref; 
+    	$ar = $cursor->fetchrow_arrayref;
     	ok($ar && "$ar->[0]" eq "$val",
     	      "Select with bound selector fetch ($name)")
     	    or print STDERR "Got '$ar->[0]', expected '$val'.\n";
@@ -227,5 +240,5 @@ for (1..$#{$types}) {
 
 $dbh and $dbh->commit;
 $dbh and $dbh->disconnect;
-	  
+
 exit(0);

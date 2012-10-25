@@ -72,9 +72,11 @@ else {
     $ld_options = qq{-L"$II_SYSTEM/ingres/lib" -lingres -lrt};
 }
 
+# Inform linker about libs
 $opts{LIBS} = [ $ld_options ];
 $opts{dynamic_lib} = { OTHERLDFLAGS => " $ld_options" };
 
+# MinGW requires libingres.a
 if ($is_win32 && $is_gcc) {
     unless (-e "$II_SYSTEM\\ingres\\lib\\libingres.a") {
         die q{
@@ -87,15 +89,16 @@ Place it in $II_SYSTEM\\ingres\\lib and run DBD::IngresII installation again.
 }
 
 my $dbi_arch_dir = dbd_dbi_arch_dir();
-
 $opts{'INC'} = qq{-I"$dbi_arch_dir"};
 
+# Here we go
 WriteMakefile(%opts);
 
+# Rules for generation of dbdimp.c and IngresII.xsh
 sub MY::postamble {
     my $driver_template = $dbi_arch_dir."/Driver.xst";
 
-    q[
+    return q[
 dbdimp.c IngresII.h : dbdimp.sc IngresII.sh
 	$(ESQLC) $(ESQLCOPT) dbdimp.sc 
 

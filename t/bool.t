@@ -1,3 +1,8 @@
+# Copytight (c) 2012 Tomasz Konojacki
+#
+# You may distribute under the terms of either the GNU General Public
+# License or the Artistic License, as specified in the Perl README file.
+
 use strict;
 use warnings;
 use utf8;
@@ -81,8 +86,16 @@ unless ($ENV{TEST_BOOLEAN}) {
 eval { local $dbh->{RaiseError}=0;
        local $dbh->{PrintError}=0;
        $dbh->do("DROP TABLE $testtable"); };
-ok($dbh->do("CREATE TABLE $testtable(id INTEGER4 not null, name CHAR(64))"),
+
+if ($dbh->ing_is_vectorwise) {
+    ok($dbh->do("CREATE TABLE $testtable(id INTEGER4 not null, name CHAR(64)) WITH STRUCTURE=HEAP"),
       'Basic create table');
+}
+else {
+    ok($dbh->do("CREATE TABLE $testtable(id INTEGER4 not null, name CHAR(64))"),
+      'Basic create table');
+}
+
 ok($dbh->do("INSERT INTO $testtable VALUES(1, 'Alligator Descartes')"),
       'Basic insert(value)');
 ok($dbh->do("DELETE FROM $testtable WHERE id = 1"),
@@ -91,14 +104,19 @@ ok($dbh->do( "DROP TABLE $testtable" ),
       'Basic drop table');
 
 # CREATE TABLE OF APPROPRIATE TYPE
-ok($dbh->do("CREATE TABLE $testtable (val BOOLEAN)"), 'Create table (BOOLEAN)');
+if ($dbh->ing_is_vectorwise) {
+    ok($dbh->do("CREATE TABLE $testtable (val BOOLEAN) WITH STRUCTURE=HEAP"), 'Create table (BOOLEAN)');
+}
+else {
+    ok($dbh->do("CREATE TABLE $testtable (val BOOLEAN)"), 'Create table (BOOLEAN)');
+}
 ok($cursor = $dbh->prepare("INSERT INTO $testtable VALUES (?)"),
 	  'Insert prepare (BOOLEAN)');
 ok($cursor->execute(1), 'Insert execute (BOOLEAN)');
 ok($cursor->finish, 'Insert finish (BOOLEAN)');
 ok($cursor = $dbh->prepare("SELECT val FROM $testtable WHERE val = ?"), 'Select prepare (BOOLEAN)');
 ok($cursor->execute(1), 'Select execute (BOOLEAN)');
-my $ar = $cursor->fetchrow_arrayref; 
+my $ar = $cursor->fetchrow_arrayref;
 ok($ar && $ar->[0] == 1, 'Select fetch (BOOLEAN)')
 	or print STDERR 'Got "' . $ar->[0] . '", expected "' . 1 . "\".\n";
 ok($cursor->finish, 'Select finish (BOOLEAN)');
@@ -107,5 +125,5 @@ ok($dbh->do("DROP TABLE $testtable"), 'Drop table (BOOLEAN)');
 
 $dbh and $dbh->commit;
 $dbh and $dbh->disconnect;
-	  
+
 exit(0);

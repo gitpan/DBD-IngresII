@@ -9,7 +9,7 @@ require 5.008_008;
 
 =head1 NAME
 
-DBD::IngresII - DBI driver for Ingres database systems
+DBD::IngresII - DBI driver for Actian Ingres and Actian Vectorwise RDBMS
 
 =head1 SYNOPSIS
 
@@ -37,10 +37,10 @@ DBD::IngresII - DBI driver for Ingres database systems
 
     use DBI 1.00;
     use DynaLoader ();
-    
+
     our @ISA = qw(DynaLoader);
 
-    our $VERSION = '0.85';
+    our $VERSION = '0.86';
 
     bootstrap DBD::IngresII $VERSION;
 
@@ -66,6 +66,7 @@ DBD::IngresII - DBI driver for Ingres database systems
         DBD::IngresII::db->install_method('ing_utf8_quote');
         DBD::IngresII::db->install_method('ing_bool_to_str');
         DBD::IngresII::db->install_method('ing_norm_bool');
+        DBD::IngresII::db->install_method('ing_is_vectorwise');
 
         $drh;
     }
@@ -224,25 +225,55 @@ DBD::IngresII - DBI driver for Ingres database systems
 
     sub get_info {
         my ($dbh, $ident) = @_;
-        my $info = '';
+
         return unless $ident;
-        if ($ident == 17 ) { return 'Ingres'; }
-        elsif ($ident == 18) { $info = '_version'; }
+
+        if ($ident == 17) {
+            my $sth = $dbh->prepare("SELECT dbmsinfo('_version')");
+
+            return unless $sth;
+
+            $sth->execute;
+
+            my $info = $sth->fetchrow;
+            $sth->finish;
+
+            if ($info =~ /^(\w{2})/) {
+                if ($1 eq 'II') {
+                    return 'Ingres';
+                }
+                elsif ($1 eq 'VW') {
+                    return 'Vectorwise';
+                }
+                else {
+                    return 'unknown';
+                }
+            }
+
+            return 'unknown';
+        }
+        elsif ($ident == 18) {
+            my $sth = $dbh->prepare("SELECT dbmsinfo('_version')");
+
+            return unless $sth;
+
+            $sth->execute;
+
+            my $info = $sth->fetchrow;
+            $sth->finish;
+
+            if ($info =~ /^(II|VW) (\d+\.\d+\.\d+)/) {
+                return $2;
+            }
+
+            return 'unknown';
+        }
         elsif ($ident == 29) { return q{'}; }
         elsif ($ident == 41) { return '.'; }
-        else { return; }
-        my $sth = $dbh->prepare("SELECT dbmsinfo('$info')");
-            return unless $sth;
-            $sth->execute;
-        my $version = $sth->fetchrow;
-        if ($version =~ /II 10\.1\.0/) { return '10.1'; }
-        elsif ($version =~ /II 10\.0\.0/) { return '10.0'; }
-        elsif ($version =~ /II 9\.3\.0/) { return '9.3'; }
-        elsif ($version =~ /II 9\.2\.0/) { return '2006 R3'; }
-        elsif ($version =~ /II 9\.1\.0/) { return '2006 R2'; }
-        elsif ($version =~ /II 9\.0\.4/) { return '2006'; }
-        else { return 'unknown';}
-  }
+        else  { return; }
+
+
+    }
 
 
     sub ping {
@@ -256,7 +287,7 @@ DBD::IngresII - DBI driver for Ingres database systems
     sub type_info_all {
         my ($dbh) = @_;
         my $ti = [
-            {   
+            {
                 TYPE_NAME          => 0,
                 DATA_TYPE          => 1,
                 COLUMN_SIZE        => 2,
@@ -386,6 +417,12 @@ DBD::IngresII - DBI driver for Ingres database systems
 
         return unless defined $bool;
         return $bool ? 1 : 0;
+    }
+
+    sub ing_is_vectorwise {
+        my $dbh = shift;
+
+        return ($dbh->get_info(17) eq 'Vectorwise');
     }
 }
 
@@ -910,6 +947,16 @@ scalar's ("scalar" means "variable" in Perl world) UTF-8 flag set on.
 
 Note that you should use this attribute only if C<II_CHARSET> is set to C<UTF8>.
 
+=head2 ing_is_vectorwise
+
+    # Returns 1 if $dbh is connected to Vectorwise, 0 if it is connected to
+    # Ingres
+
+    $dbh->ing_is_vectorwise
+
+This method checks whether database handle is connected to Actian Vectorwise
+database.
+
 =head1 FEATURES NOT IMPLEMENTED
 
 =head2 state
@@ -1131,6 +1178,26 @@ Automatic installation with CPAN.
 
 =item *
 
+Vectorwise 2.5.1 Enterprise Build 162 + Visual C++ on x64
+
+=item *
+
+Ingres 10.1 Community Build 125 + Windows + Visual C++ on x64
+
+=item *
+
+Ingres 10.1 Community Build 125 + Windows + MinGW on x64
+
+=item *
+
+Ingres 10.1 Community Build 125 + Linux + gcc on x64
+
+=item *
+
+Ingres 10S Enterprise Build 126 + Windows + Visual C++ on x86
+
+=item *
+
 Ingres 10.1 Community Build 121 + Windows + Visual C++ on x86
 
 =item *
@@ -1147,11 +1214,15 @@ Ingres 10.1 Community Build 121 + Windows + MinGW on x64
 
 =item *
 
-Ingres 10.1 Community Build 121 + Linux + gcc on x86
+Ingres 10.1 Community Build 120 + Linux + gcc on x86
 
 =item *
 
-Ingres 10.1 Community Build 121 + Linux + gcc on x64
+Ingres 10.1 Community Build 120 + Linux + gcc on x64
+
+=item *
+
+Ingres 9.2.3 Enterprise Build 101 + Windows + Visual C++ on x86
 
 =back
 
@@ -1194,11 +1265,14 @@ You can download binary builds of DBD::IngresII using PPM repository at:
 
 Builds are provided only for Windows version of ActivePerl.
 
-=head1 PERFORCE REPOSITORY
+=head1 GIT REPOSITORY
 
-You can access latest development version of DBD::IngresII on Assembla:
+DBD::IngresII is hosted at CodePlex - L<http://dbdingresii.codeplex.com>.
+You can fetch latest development version of DBD::IngresII from following
+repository:
 
-    https://www.assembla.com/code/dbd-ingresii/perforce/nodes
+    https://git01.codeplex.com/dbdingresii
+    Mirror: git://github.com/xenu/dbd-ingresii.git
 
 =head1 REPORTING BUGS
 
@@ -1241,6 +1315,14 @@ Geraint Jones
 =item *
 
 Remy Chibois
+
+=item *
+
+Mike Battersby
+
+=item *
+
+Tim Bunce
 
 =item *
 

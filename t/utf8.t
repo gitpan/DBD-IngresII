@@ -1,3 +1,8 @@
+# Copytight (c) 2012 Tomasz Konojacki
+#
+# You may distribute under the terms of either the GNU General Public
+# License or the Artistic License, as specified in the Perl README file.
+
 use strict;
 use warnings;
 use utf8;
@@ -56,8 +61,14 @@ eval { local $dbh->{RaiseError}=0;
        local $dbh->{PrintError}=0;
        $dbh->do("DROP TABLE $testtable"); };
 
-ok($dbh->do("CREATE TABLE $testtable(lol VARCHAR(12))"),
+if ($dbh->ing_is_vectorwise) {
+    ok($dbh->do("CREATE TABLE $testtable(lol VARCHAR(12)) WITH STRUCTURE=HEAP"),
       'Create table');
+}
+else {
+    ok($dbh->do("CREATE TABLE $testtable(lol VARCHAR(12))"),
+      'Create table');
+}
 
 ok($cursor = $dbh->prepare("INSERT INTO $testtable VALUES (?)"),
       'Prepare INSERT');
@@ -71,7 +82,7 @@ ok($cursor = $dbh->prepare("SELECT lol FROM $testtable"),
 
 ok($cursor->execute, 'Execute SELECT');
 
-my $ar = $cursor->fetchrow_hashref; 
+my $ar = $cursor->fetchrow_hashref;
 
 ok(!utf8::is_utf8($ar->{lol}), 'Check whether string has UTF-8 flag');
 
@@ -82,7 +93,7 @@ ok($cursor = $dbh->prepare("SELECT lol FROM $testtable"),
 
 ok($cursor->execute, 'Execute SELECT');
 
-$ar = $cursor->fetchrow_hashref; 
+$ar = $cursor->fetchrow_hashref;
 
 ok(utf8::is_utf8($ar->{lol}), 'Check whether string has UTF-8 flag');
 

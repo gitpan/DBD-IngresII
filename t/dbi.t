@@ -47,8 +47,14 @@ else {
 my $dbh = connect_db($dbname);
 my($cursor, $sth);
 
-ok($dbh->do("CREATE TABLE $testtable(id INTEGER4 not null, name CHAR(64))"),
-     'Create table');
+if ($dbh->ing_is_vectorwise) {
+    ok($dbh->do("CREATE TABLE $testtable(id INTEGER4 not null, name CHAR(64)) WITH STRUCTURE=HEAP"),
+        'Create table');
+}
+else {
+    ok($dbh->do("CREATE TABLE $testtable(id INTEGER4 not null, name CHAR(64))"),
+        'Create table');
+}
 ok($dbh->do("INSERT INTO $testtable VALUES(1, 'Alligator Descartes')"),
      'Insert(value)');
 ok($dbh->do("DELETE FROM $testtable WHERE id = 1"),
@@ -96,7 +102,7 @@ ok($sth->execute( 2, 'Aligator Descartes'),
      'Re-executing(insert)with params');
 
 ok($cursor->execute, 'Re-execute(select)');
-ok($row = $cursor->fetchrow_arrayref, 'Fetching row'); 
+ok($row = $cursor->fetchrow_arrayref, 'Fetching row');
 ok($row->[0] == 1, 'Column 1 value');
 ok($row->[1] eq 'Henrik Tougaard', 'Column 2 value');
 ok(!defined($row = $cursor->fetchrow_arrayref),
@@ -107,7 +113,7 @@ ok($cursor->execute(2), 'Re-execute[select(2)] for chopblanks');
 ok($cursor->{ChopBlanks}, 'ChopBlanks on by default');
 $cursor->{ChopBlanks} = 0;
 ok(!$cursor->{ChopBlanks}, 'ChopBlanks switched off');
-ok($row = $cursor->fetchrow_arrayref, 'Fetching row'); 
+ok($row = $cursor->fetchrow_arrayref, 'Fetching row');
 ok($row->[1] =~ /^Aligator Descartes\s+/, 'Column 2 value');
 ok($cursor->finish, 'finish(cursor)');
 
@@ -148,7 +154,14 @@ ok($sth->finish, 'finish');
 ###}
 
 ok($dbh->do( "DROP TABLE $testtable" ), 'Dropping table');
-ok($dbh->do("CREATE TABLE $testtable(id INTEGER4 not null, name LONG VARCHAR, bin BYTE VARYING(64))"), 'Create long varchar table');
+
+if ($dbh->ing_is_vectorwise) {
+    ok($dbh->do("CREATE TABLE $testtable(id INTEGER4 not null, name LONG VARCHAR, bin BYTE VARYING(64)) WITH STRUCTURE=HEAP"), 'Create long varchar table');
+}
+else {
+    ok($dbh->do("CREATE TABLE $testtable(id INTEGER4 not null, name LONG VARCHAR, bin BYTE VARYING(64))"), 'Create long varchar table');
+}
+
 ok($dbh->do("INSERT INTO $testtable (id, name) VALUES(1, '')"),
     'Long varchar zero-length insert');
 ok($dbh->do("DELETE FROM $testtable WHERE id = 1"),
@@ -216,7 +229,12 @@ $cursor->finish;
 
 #get_info
 use DBI::Const::GetInfoType;
-ok($dbh->get_info($GetInfoType{SQL_DBMS_NAME}) eq 'Ingres', 'get_info(DBMS name)');
+if ($dbh->ing_is_vectorwise) {
+    ok($dbh->get_info($GetInfoType{SQL_DBMS_NAME}) eq 'Vectorwise', 'get_info(DBMS name)');
+}
+else {
+    ok($dbh->get_info($GetInfoType{SQL_DBMS_NAME}) eq 'Ingres', 'get_info(DBMS name)');
+}
 
 #table_info
 $sth = $dbh->table_info('','',$testtable);

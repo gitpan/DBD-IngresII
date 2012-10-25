@@ -4,7 +4,9 @@
 
    Copyright (c) 1994,1995  Tim Bunce
    Copyright (c) 1996,1997  Henrik Tougaard (htoug@cpan.org)
-   				Ingres modifications
+   				            Ingres modifications
+   
+   Copyright (c) 2012       Tomasz Konojacki
    
    You may distribute under the terms of either the GNU General Public
    License or the Artistic License, as specified in the Perl README file.
@@ -23,6 +25,11 @@
 
 EXEC SQL INCLUDE SQLDA;
 EXEC SQL INCLUDE SQLCA;
+
+#ifndef IISQ_BOO_TYPE
+/* For 9.3 and older */
+#define IISQ_BOO_TYPE -9998
+#endif
 
 #ifndef IISQ_DEC_TYPE
 /* For 6.4 users, that don't have DECIMAL */

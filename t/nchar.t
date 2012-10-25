@@ -1,3 +1,8 @@
+# Copytight (c) 2012 Tomasz Konojacki
+#
+# You may distribute under the terms of either the GNU General Public
+# License or the Artistic License, as specified in the Perl README file.
+
 use strict;
 use warnings;
 use utf8;
@@ -91,8 +96,14 @@ my $cursor;
 eval { local $dbh->{RaiseError}=0;
        local $dbh->{PrintError}=0;
        $dbh->do("DROP TABLE $testtable"); };
-ok($dbh->do("CREATE TABLE $testtable(id INTEGER4 not null, name CHAR(64))"),
-      'Basic create table');
+if ($dbh->ing_is_vectorwise) {
+    ok($dbh->do("CREATE TABLE $testtable(id INTEGER4 not null, name CHAR(64)) WITH STRUCTURE=HEAP"),
+                'Basic create table');
+}
+else {
+    ok($dbh->do("CREATE TABLE $testtable(id INTEGER4 not null, name CHAR(64))"),
+                'Basic create table');
+}
 ok($dbh->do("INSERT INTO $testtable VALUES(1, 'Alligator Descartes')"),
       'Basic insert(value)');
 ok($dbh->do("DELETE FROM $testtable WHERE id = 1"),
@@ -104,28 +115,40 @@ my $data = get_data_for_charset($charset);
 
 
 # CREATE TABLE OF APPROPRIATE TYPE
-ok($dbh->do("CREATE TABLE $testtable (val NCHAR(10))"), 'Create table (NCHAR)');
+if ($dbh->ing_is_vectorwise) {
+    ok($dbh->do("CREATE TABLE $testtable (val NCHAR(10)) WITH STRUCTURE=HEAP"), 'Create table (NCHAR)');
+}
+else {
+    ok($dbh->do("CREATE TABLE $testtable (val NCHAR(10))"), 'Create table (NCHAR)');
+}
+
 ok($cursor = $dbh->prepare("INSERT INTO $testtable VALUES (?)"),
 	  'Insert prepare (NCHAR)');
 ok($cursor->execute($data), 'Insert execute (NCHAR)');
 ok($cursor->finish, 'Insert finish (NCHAR)');
 ok($cursor = $dbh->prepare("SELECT val FROM $testtable"), 'Select prepare (NCHAR)');
 ok($cursor->execute, 'Select execute (NCHAR)');
-my $ar = $cursor->fetchrow_arrayref; 
+my $ar = $cursor->fetchrow_arrayref;
 ok($ar && decode('utf-16le', $ar->[0]) eq ($data . (' ' x (10 - (length $data)))), 'Select fetch (NCHAR)')
 	or print STDERR 'Got "' . encode('utf-8', decode('utf-16le', $ar->[0])) . '", expected "' . encode('utf-8', $data . (' ' x (10 - (length $data)))) . "\".\n";
 ok($cursor->finish, 'Select finish (NCHAR)');
 ok($dbh->do("DROP TABLE $testtable"), 'Drop table (NCHAR)');
 
 # CREATE TABLE OF APPROPRIATE TYPE
-ok($dbh->do("CREATE TABLE $testtable (val NVARCHAR(10))"), 'Create table (NVARCHAR)');
+if ($dbh->ing_is_vectorwise) {
+    ok($dbh->do("CREATE TABLE $testtable (val NVARCHAR(10)) WITH STRUCTURE=HEAP"), 'Create table (NVARCHAR)');
+}
+else {
+    ok($dbh->do("CREATE TABLE $testtable (val NVARCHAR(10))"), 'Create table (NVARCHAR)');
+}
+
 ok($cursor = $dbh->prepare("INSERT INTO $testtable VALUES (?)"),
 	  'Insert prepare (NVARCHAR)');
 ok($cursor->execute($data), 'Insert execute (NVARCHAR)');
 ok($cursor->finish, 'Insert finish (NVARCHAR)');
 ok($cursor = $dbh->prepare("SELECT val FROM $testtable"), 'Select prepare (NVARCHAR)');
 ok($cursor->execute, 'Select execute (NVARCHAR)');
-$ar = $cursor->fetchrow_arrayref; 
+$ar = $cursor->fetchrow_arrayref;
 ok($ar && $ar->[0] eq encode('utf-16le', $data), 'Select fetch (NCHAR)')
 	or print STDERR 'Got "' . encode('utf-8', decode('utf-16le', $ar->[0])) . '", expected "' . encode('utf-8', $data) . "\".\n";
 ok($cursor->finish, 'Select finish (NVARCHAR)');
@@ -133,5 +156,5 @@ ok($dbh->do("DROP TABLE $testtable"), 'Drop table (NVARCHAR)');
 
 $dbh and $dbh->commit;
 $dbh and $dbh->disconnect;
-	  
+
 exit(0);

@@ -1,3 +1,10 @@
+v0.86     2012.10.25
+ - Deleted unsafe (and unused) code for statement name generation
+ - Now DBD::IngresII will compile with Ingres 9.2 (added dummy definition
+   for IISQ_BOO_TYPE)
+ - Cleaned-up ->get_info() a bit
+ - Added method ->ing_is_vectorwise
+ - Now tests will pass under Vectorwise
 v0.85     2012.09.21
  - Fixed two buffer overflow errors
  - Makefile.PL is rewritten from scratch

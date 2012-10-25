@@ -47,8 +47,14 @@ else {
 my $dbh = connect_db($dbname);
 my $sth;
 
-ok($dbh->do("CREATE TABLE $testtable( col1 integer not null primary key, col2 char(2))"),
-     "Create table");
+if ($dbh->ing_is_vectorwise) {
+    ok($dbh->do("CREATE TABLE $testtable( col1 integer not null primary key, col2 char(2)) WITH STRUCTURE=HEAP"),
+      "Create table");
+}
+else {
+    ok($dbh->do("CREATE TABLE $testtable( col1 integer not null primary key, col2 char(2))"),
+      "Create table");
+}
 
 ok($sth = $dbh->prepare("insert into $testtable values (?,?)"), 'prepare');
 
@@ -74,7 +80,7 @@ ok($dbh->do("UPDATE $testtable SET col1=4 WHERE col1=1")==1,
     'Updating row (1,\'abc\')');
 ok(($dbh->{AutoCommit} = 0)  == 0, 'Set AutoCommit to 0');
 #Change the row back again
-ok($dbh->do("UPDATE $testtable SET col1=1 WHERE col1=4")==1, 
+ok($dbh->do("UPDATE $testtable SET col1=1 WHERE col1=4")==1,
     'Updating row (4,\'abc\')');
 # And set rollback-mode
 ok($dbh->{ing_rollback}=1, 'Ing_rollback set to 1');
