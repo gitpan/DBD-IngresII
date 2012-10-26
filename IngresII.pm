@@ -40,7 +40,7 @@ DBD::IngresII - DBI driver for Actian Ingres and Actian Vectorwise RDBMS
 
     our @ISA = qw(DynaLoader);
 
-    our $VERSION = '0.86';
+    our $VERSION = '0.87';
 
     bootstrap DBD::IngresII $VERSION;
 
@@ -68,7 +68,7 @@ DBD::IngresII - DBI driver for Actian Ingres and Actian Vectorwise RDBMS
         DBD::IngresII::db->install_method('ing_norm_bool');
         DBD::IngresII::db->install_method('ing_is_vectorwise');
 
-        $drh;
+        return $drh;
     }
     1;
 }
@@ -103,7 +103,7 @@ DBD::IngresII - DBI driver for Actian Ingres and Actian Vectorwise RDBMS
         DBD::IngresII::db::_login($this, $dbname, $user, $auth)
             or return;
 
-        $this;
+        return $this;
     }
 
     sub data_sources {
@@ -179,7 +179,7 @@ DBD::IngresII - DBI driver for Actian Ingres and Actian Vectorwise RDBMS
         DBD::IngresII::st::_prepare($sth, $statement, $attribs)
             or return;
 
-        $sth;
+        return $sth;
     }
 
     sub table_info {
@@ -200,7 +200,7 @@ DBD::IngresII - DBI driver for Actian Ingres and Actian Vectorwise RDBMS
 #          WHERE table_type ='V'");
         return unless $sth;
         $sth->execute;
-        $sth;
+        return $sth;
     }
 
     sub column_info {
@@ -220,7 +220,7 @@ DBD::IngresII - DBI driver for Actian Ingres and Actian Vectorwise RDBMS
         });
         return unless $sth;
         $sth->execute;
-        $sth;
+        return $sth;
     }
 
     sub get_info {
@@ -441,8 +441,8 @@ __END__
 =head1 DESCRIPTION
 
 DBD::IngresII is a database driver for the perl DBI system that allows
-access to Ingres databases. It is built on top of the standard DBI
-extension and implements the methods that DBI requires.
+access to Ingres and Vectorwise databases. It is built on top of the standard
+DBI extension and implements the methods that DBI requires.
 
 This document describes the differences between the "generic" DBD and
 DBD::IngresII.
@@ -1178,7 +1178,7 @@ Automatic installation with CPAN.
 
 =item *
 
-Vectorwise 2.5.1 Enterprise Build 162 + Visual C++ on x64
+Vectorwise 2.5.1 Enterprise Build 162 + Windows + Visual C++ on x64
 
 =item *
 
