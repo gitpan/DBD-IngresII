@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copytight (c) 2012 Tomasz Konojacki
+# Copyright (c) 2012, 2013 Tomasz Konojacki
 #
 # You may distribute under the terms of either the GNU General Public
 # License or the Artistic License, as specified in the Perl README file.
@@ -81,7 +81,7 @@ if ($is_win32 && $is_gcc) {
     unless (-e "$II_SYSTEM\\ingres\\lib\\libingres.a") {
         die q{
 You are using MSWin32 Perl with gcc compiler. You need libingres.a file,
-which you can download from: 
+which you can download from:
 http://community.actian.com/wiki/Libingres.a_for_MinGW
 Place it in $II_SYSTEM\\ingres\\lib and run DBD::IngresII installation again.
         }
@@ -100,7 +100,7 @@ sub MY::postamble {
 
     return q[
 dbdimp.c IngresII.h : dbdimp.sc IngresII.sh
-	$(ESQLC) $(ESQLCOPT) dbdimp.sc 
+	$(ESQLC) $(ESQLCOPT) dbdimp.sc
 
 $(BASEEXT).xs: $(BASEEXT).xsh
 

@@ -1,4 +1,4 @@
-# Copytight (c) 2012 Tomasz Konojacki
+# Copyright (c) 2012, 2013 Tomasz Konojacki
 #
 # You may distribute under the terms of either the GNU General Public
 # License or the Artistic License, as specified in the Perl README file.

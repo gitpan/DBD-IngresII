@@ -1,8 +1,8 @@
 /*                               -*- Mode: C -*-
  *
- * Copyright (c) 1994,1995  Tim Bunce
- *           (c) 1996,1997  Henrik Tougaard
- *           (c) 2012       Tomasz Konojacki
+ * Copyright (c) 1994, 1995  Tim Bunce
+ *           (c) 1996, 1997  Henrik Tougaard
+ *           (c) 2012, 2013  Tomasz Konojacki
  *
  * You may distribute under the terms of either the GNU General Public
  * License or the Artistic License, as specified in the Perl README file.
@@ -24,17 +24,17 @@ static int nxt_session;    /* the next 'available' session_id */
 
 #ifdef _WIN32
 
-/* On Windows, ^C does not work when DBD::IngresII fetches row containing
- * DECIMAL column, probably due to bug in Ingres. As a workaround, I have
- * registered this function as CTRL-C handler using SetConsoleCtrlHandler()
- * WINAPI function. 
- */
+    /* On Windows, ^C does not work when DBD::IngresII fetches row containing
+     * DECIMAL column, probably due to bug in Ingres. As a workaround, I have
+     * registered this function as CTRL-C handler using SetConsoleCtrlHandler()
+     * WINAPI function. 
+     */
 
-static void
-dummy_ctrl_c_handler()
-{
-    ExitProcess(2);
-}
+    static void
+    dummy_ctrl_c_handler()
+    {
+        ExitProcess(2);
+    }
 
 #endif
 
@@ -53,7 +53,8 @@ is_ascii(s, len)
     return 1;
 }
 
-static void dump_sqlda(sqlda)
+static void
+dump_sqlda(sqlda)
     IISQLDA *sqlda;
 {
     int i;
@@ -195,18 +196,20 @@ dbd_discon_all(drh, imp_drh)
     return FALSE;
 }
 
-static U32 *statement_numbers;    /* bitmask of reserved statement nos */
-static int statement_max;         /* max bit number allocated (8 pr char) */
+static U8 *statement_numbers;     /* Array of booleans indicating whether statement number is used */
+static int statement_max;         /* Maximal statement number */
 
 static void
 release_statement(num)
     int num;
 {
-    if (num < 0 || num >= statement_max * 8) return;
-    statement_numbers[num / 8] &= ~(1 << (num % 8));
+    if ((num < 0) || (num >= statement_max))
+        return;
+    
+    statement_numbers[num] = 0;
+    
     if (dbis->debug >= 4)
-        PerlIO_printf(DBILOGFP, "rel_st.nam: %d [%d]=%u\n", num, num/8,
-               (unsigned int)statement_numbers[num/8]);
+        PerlIO_printf(DBILOGFP, "rel_st.nam: %d\n", num);
 }
 
 static void
@@ -218,28 +221,22 @@ generate_statement_name(st_num, name)
     ** Names can be reused when the statement handle is destroyed.
     ** The number of active statements is limited by the PSF in Ingres
     */
-    int i, found=0, num;
+    int i, found = 0, num;
+
     if (dbis->debug >= 4)
         PerlIO_printf(DBILOGFP, "gen_st.nam");
-    for (i=0; i<statement_max; i++)
+
+    for (i=0; i < statement_max; ++i)
     {
-        /* see if there is a free statement-name
-           in the already allocated lump */
-        int bit;
-        if (dbis->debug >= 4)
-            PerlIO_printf(DBILOGFP, " [%d]=%u", i, (unsigned int)statement_numbers[i]);
-        for (bit=0; bit < 32; bit++)
+        /* See whether there is any unused statement number */
+        if (!statement_numbers[i])
         {
-            if (((statement_numbers[i]>>bit) & 1) == 0)
-            {
-                /* free bit found */
-                num = i*32+bit;
-                found = 1;
-                break;
-            }
+            num = i;
+            ++found;
+            break;
         }
-        if (found) break;
     }
+
     if (!found)
     {
         /* allocate a new lump af numbers and take the first one */
@@ -247,27 +244,33 @@ generate_statement_name(st_num, name)
         {
             /* first time round */
             if (dbis->debug >= 4)
-                PerlIO_printf(DBILOGFP, " alloc first time");
+                PerlIO_printf(DBILOGFP, " alloc first time (statement_max == 0)");
+
+            Newxz(statement_numbers, 8, U8);
+            
             num = 0;
-            Newz(42, statement_numbers, 8, U32);
-            for(i = statement_max; i < statement_max+8; i++)
-                statement_numbers[i] = 0;
             statement_max = 8;
         }
-        else {
-            num = statement_max * 32;
+        else
+        {
             if (dbis->debug >= 4)
-                PerlIO_printf(DBILOGFP, " alloc to %d", statement_max);
-            Renew(statement_numbers, statement_max+8, U32);
-            for(i = statement_max; i < statement_max+8; i++)
-                statement_numbers[i] = 0;
+                PerlIO_printf(DBILOGFP, " realloc %d + 8", statement_max);
+
+            Renew(statement_numbers, statement_max + 8, U8);
+            Zero(statement_numbers + statement_max, 8, U8);
+            
+            num = statement_max;
             statement_max += 8;
-        }
+            
+         }
     }
-    statement_numbers[num/8] |= (1<<(num%8));
+
+    statement_numbers[num] = 1;
     sprintf(name, "s%d", num);
+
     if (dbis->debug >= 4)
         PerlIO_printf(DBILOGFP, " returns %d\n", num);
+
     *st_num = num;
 }
 
@@ -389,10 +392,10 @@ dbd_db_login(dbh, imp_dbh, dbname, user, pass)
     /* Set default value for LongReadLen */
     DBIc_LongReadLen(imp_dbh) = 2UL * 1024 * 1024 * 1024;
 
-
-    /* Set default value for ing_rollback and ing_enable_utf8 */
+    /* Set default values for attributes */
     imp_dbh->ing_rollback = 0;
     imp_dbh->ing_enable_utf8 = 0;
+    imp_dbh->ing_empty_isnull  = 0;
 
     return 1;
 }
@@ -593,7 +596,6 @@ dbd_db_STORE_attrib(dbh, imp_dbh, keysv, valuesv)
 {
     STRLEN kl;
     char *key = SvPV(keysv,kl);
-    SV *cachesv = NULL;
     int on = SvTRUE(valuesv);
 
     set_session(dbh);
@@ -656,11 +658,11 @@ dbd_db_STORE_attrib(dbh, imp_dbh, keysv, valuesv)
         imp_dbh->ing_rollback = on;
     else if (kl==15 && strEQ(key, "ing_enable_utf8"))
         imp_dbh->ing_enable_utf8 = on;
+    else if (kl==16 && strEQ(key, "ing_empty_isnull"))
+        imp_dbh->ing_empty_isnull = on;
     else
         return FALSE;
 
-    if (cachesv) /* cache value for later DBI 'quick' fetch? */
-        hv_store((HV*)SvRV(dbh), key, (U32)kl, cachesv, 0);
     return TRUE;
 }
 
@@ -674,7 +676,6 @@ dbd_db_FETCH_attrib(dbh, imp_dbh, keysv)
     char *key = SvPV(keysv,kl);
     SV *retsv = NULL;
     /* Default to caching results for DBI dispatch quick_FETCH  */
-    int cacheit = TRUE;
 
     set_session(dbh);
     if (kl==10 && strEQ(key, "AutoCommit"))
@@ -692,8 +693,6 @@ dbd_db_FETCH_attrib(dbh, imp_dbh, keysv)
                 autocommit_state, transaction_state, sqlca.sqlcode);
         DBIc_set(imp_dbh, DBIcf_AutoCommit, autocommit_state);
         retsv = sv_2mortal(newSVsv(boolSV(autocommit_state)));
-        cacheit = FALSE;    /* Don't cache AutoCommit state - some
-                  ** fool^H^H^H^Huser may change it via SQL */
         if (transaction_state == 0)
         {
             EXEC SQL COMMIT;
@@ -703,13 +702,11 @@ dbd_db_FETCH_attrib(dbh, imp_dbh, keysv)
         retsv = imp_dbh->ing_rollback ? &PL_sv_yes : &PL_sv_no;
     else if (kl==15 && strEQ(key, "ing_enable_utf8"))
         retsv = imp_dbh->ing_enable_utf8 ? &PL_sv_yes : &PL_sv_no;
+    else if (kl==16 && strEQ(key, "ing_empty_isnull"))
+        retsv = imp_dbh->ing_empty_isnull ? &PL_sv_yes : &PL_sv_no;
 
     if (!retsv)
         return Nullsv;
-
-    if (cacheit) /* cache for next time (via DBI quick_FETCH) */
-        if (hv_store((HV*)SvRV(dbh), key, (U32)kl, retsv, 0) != NULL)
-            SvREFCNT_inc(retsv);
 
     return (retsv);
 }
@@ -733,6 +730,15 @@ dbd_st_prepare(sth, imp_sth, statement, attribs)
 
     if (dbis->debug >= 2)
         PerlIO_printf(DBILOGFP,"DBD::Ingres::dbd_st_prepare('%s')\n", statement);
+
+    /* Set default value for ing_empty_isnull */
+    imp_sth->ing_empty_isnull = imp_dbh->ing_empty_isnull;
+
+    if (attribs) {
+        SV** svp = DBD_ATTRIB_GET_SVP(attribs, "ing_empty_isnull", 16);
+        if (svp != NULL)
+            imp_sth->ing_empty_isnull = SvTRUE(*svp);
+    }
 
     imp_sth->done_desc = 0;
     sqlda = &imp_sth->sqlda;
@@ -829,12 +835,14 @@ dbd_get_handler(fbh)
         char buf[HANDLER_READ_SIZE];
         unsigned long max_to_read = sizeof(buf);
     EXEC SQL END DECLARE SECTION;
-#ifndef __LP64__
-    STRLEN offset, data_len, trunc_len;
-#else
-    U32 offset, data_len, trunc_len;
-    STRLEN d;
-#endif
+
+    #ifndef __LP64__
+        STRLEN offset, data_len, trunc_len;
+    #else
+        U32 offset, data_len, trunc_len;
+        STRLEN d;
+    #endif
+
     char *data;
     D_imp_sth(fbh->sth);
 
@@ -872,63 +880,61 @@ dbd_get_handler(fbh)
             return 0;
         }
 
-#ifndef __LP64__
+        #ifndef __LP64__
+            if (offset + size_read > trunc_len)
+            {
+        #else
+            if (offset + (U32)size_read > trunc_len)
+            {
+        #endif  
+                /* we've read the maximum, time to truncate. */
+                size_read = (unsigned long)(trunc_len - offset);
+                fbh->indic = 1;
+                data_end = 1;
+                EXEC SQL ENDDATA;
+            }
 
-        if (offset + size_read > trunc_len)
-        {
-#else
-        if (offset + (U32)size_read > trunc_len)
-        {
-#endif  
-            /* we've read the maximum, time to truncate. */
-            size_read = (unsigned long)(trunc_len - offset);
-            fbh->indic = 1;
-            data_end = 1;
-            EXEC SQL ENDDATA;
-        }
+        #if 0
+            /* This looks tidy, but sv_grow does tricks with PV offsets that
+             * mean we often end up allocating almost twice as much memory.
+             * Obviously for long data types that isn't a good idea. */
+            data = SvGROW(fbh->sv, offset + size_read + 1);
+        #else
+            #ifndef __LP64__
+                data = SvPV(fbh->sv, data_len);
+                if (data_len < offset + size_read + 1)
+                {
+                    data = SvPVX(fbh->sv);
+                    data_len = offset + size_read + 1;
+                    /* We probably should expose a setting to allow user-tunable
+                     * sizes for extending the memory alloc by.  Perhaps a
+                     * $dbh->{LongChunkSize} or similar. */
+                    Renew(data, data_len, char);
+                    SvPV_set(fbh->sv, data);
+                    SvLEN_set(fbh->sv, data_len);
+                }
+            #else
+                d = (STRLEN)data_len;
+                data = SvPV(fbh->sv, d);
+                if (data_len < offset + (U32)size_read + 1)
+                {
+                    data = SvPVX(fbh->sv);
+                    data_len = offset + (U32)size_read + 1;
+                    d = (STRLEN)data_len;
+                    Renew(data, d, char);
+                    SvPV_set(fbh->sv, data);
+                    SvLEN_set(fbh->sv, d);
+                }
+            #endif
+        #endif
 
-#if 0
-        /* This looks tidy, but sv_grow does tricks with PV offsets that
-         * mean we often end up allocating almost twice as much memory.
-         * Obviously for long data types that isn't a good idea. */
-        data = SvGROW(fbh->sv, offset + size_read + 1);
-#else
-#ifndef __LP64__
-        data = SvPV(fbh->sv, data_len);
-        if (data_len < offset + size_read + 1)
-        {
-            data = SvPVX(fbh->sv);
-            data_len = offset + size_read + 1;
-            /* We probably should expose a setting to allow user-tunable
-             * sizes for extending the memory alloc by.  Perhaps a
-             * $dbh->{LongChunkSize} or similar. */
-            Renew(data, data_len, char);
-            SvPV_set(fbh->sv, data);
-            SvLEN_set(fbh->sv, data_len);
-        }
-#else
-        d = (STRLEN)data_len;
-        data = SvPV(fbh->sv, d);
-        if (data_len < offset + (U32)size_read + 1)
-        {
-            data = SvPVX(fbh->sv);
-            data_len = offset + (U32)size_read + 1;
-            d = (STRLEN)data_len;
-            Renew(data, d, char);
-            SvPV_set(fbh->sv, data);
-            SvLEN_set(fbh->sv, d);
-        }
-#endif
-
-#endif
-
-#ifndef __LP64__
-        memcpy(data + offset, buf, size_read);
-        offset += size_read;
-#else
-        memcpy(data + offset, buf, (U32)size_read);
-        offset += (U32)size_read;
-#endif
+        #ifndef __LP64__
+            memcpy(data + offset, buf, size_read);
+            offset += size_read;
+        #else
+            memcpy(data + offset, buf, (U32)size_read);
+            offset += (U32)size_read;
+        #endif
 
     } while (data_end == 0);
 
@@ -1206,6 +1212,7 @@ dbd_bind_ph (sth, imp_sth, param, value, sql_type, attribs, is_inout, maxlen)
 {
     int param_no;
     int type = 0;  /* 1: int, 2: float, 3: string */
+    int force_null = 0; /* DHR */
     IISQLVAR *var;
 
     if (SvNIOK(param) )   /* passed as a number   */
@@ -1335,6 +1342,7 @@ dbd_bind_ph (sth, imp_sth, param, value, sql_type, attribs, is_inout, maxlen)
         {
             var->sqllen = sizeof(int);
             Renew(var->sqldata, var->sqllen, char);
+
             if (SvOK(value))
                 *(int *)var->sqldata = (int)SvIV(value);
         }
@@ -1342,23 +1350,30 @@ dbd_bind_ph (sth, imp_sth, param, value, sql_type, attribs, is_inout, maxlen)
         {
             var->sqllen = sizeof(IV);
             Renew(var->sqldata, var->sqllen, char);
+
             if (SvOK(value))
                 *(IV *)var->sqldata = SvIV(value);
         }
+
         var->sqltype = IISQ_INT_TYPE;
+
         break;
     case 2: /* float */
         var->sqltype = IISQ_FLT_TYPE;
         var->sqllen = sizeof(double);
+
         Renew(var->sqldata, var->sqllen, char);
+
         if (SvOK(value))
             *(double *)var->sqldata = (double)SvNV(value);
+
         break;
     case 3: {/* string */
         STRLEN len;
         char *string;
 
         var->sqltype = IISQ_VCH_TYPE;
+
         if (SvOK(value))
             string = SvPV(value, len);
         else
@@ -1366,9 +1381,24 @@ dbd_bind_ph (sth, imp_sth, param, value, sql_type, attribs, is_inout, maxlen)
             string = 0;
             len = 0;
         }
+
+
+        if (SvOK(value))
+        {
+            if (imp_sth->ing_empty_isnull && (SvCUR(value) == 0))
+            {
+               string = NULL;
+               len = 0;
+               force_null = 1;
+            }
+            else
+                string = SvPV(value, len);
+        }
+
         var->sqllen = (unsigned short)len;
         Renew(var->sqldata, len + sizeof(short), char);
-        if (SvOK(value))
+
+        if (SvOK(value) && !force_null)
         {
             *(short *)var->sqldata = (short)len;
             Copy(string, var->sqldata + sizeof(short), len, char);
@@ -1401,11 +1431,12 @@ dbd_bind_ph (sth, imp_sth, param, value, sql_type, attribs, is_inout, maxlen)
             hdlr->sqlarg = (char *)value;
             hdlr->sqlhdlr = dbd_put_handler;
             var->sqllen = 0;
+
             break;
         }
     }
 
-    if (!SvOK(value))
+    if (!SvOK(value) || force_null)
     {
         /* !SvOK means binding a NULL */
         if (dbis->debug >= 3) PerlIO_printf(DBILOGFP, "bind(NULL)");
@@ -1420,6 +1451,7 @@ dbd_bind_ph (sth, imp_sth, param, value, sql_type, attribs, is_inout, maxlen)
         *var->sqlind = -1;
         var->sqltype = -var->sqltype;
     }
+
     if (dbis->debug >= 3)
         dump_sqlda(&imp_sth->ph_sqlda);
 
@@ -1661,6 +1693,7 @@ dbd_st_fetch(sth, imp_sth)
                             }
                             ++i;
                         }
+
                         sv_setpvn(sv, (char *)utf16, len * sizeof(U16));
                     }
                     else if (sizeof(wchar_t) == 2)
@@ -1688,7 +1721,7 @@ dbd_st_fetch(sth, imp_sth)
                         int i = 0;
                         
                         Newx(utf16_hex, (len * 4) + 1, char);
-                        
+                  
                         while ((len * (short)sizeof(U16)) > i)
                         {
                             sprintf(utf16_hex + (i * 2), "%02x", (U8)utf16_bytes[i]);
@@ -1723,14 +1756,12 @@ dbd_st_fetch(sth, imp_sth)
     }
 
     #ifdef _WIN32
+        /* See comment above dummy_ctrl_c_handler() function */
+        SetConsoleCtrlHandler(NULL, FALSE);
+        SetConsoleCtrlHandler((PHANDLER_ROUTINE)dummy_ctrl_c_handler, TRUE);
 
-    /* See comment above dummy_ctrl_c_handler() function */
-    SetConsoleCtrlHandler(NULL, FALSE);
-    SetConsoleCtrlHandler((PHANDLER_ROUTINE)dummy_ctrl_c_handler, TRUE);
-
-    if (dbis->debug >= 3)
-        PerlIO_printf(DBILOGFP, "Installed dummy CTRL+C handler as workaround to bug in Ingres \n");
-
+        if (dbis->debug >= 3)
+            PerlIO_printf(DBILOGFP, "Installed dummy CTRL+C handler as workaround to bug in Ingres \n");
     #endif
 
     if (dbis->debug >= 3)
@@ -1852,18 +1883,18 @@ dbd_st_STORE_attrib(sth, imp_sth, keysv, valuesv)
 {
     STRLEN kl;
     char *key = SvPV(keysv,kl);
-    SV *cachesv = NULL;
     int on = SvTRUE(valuesv);
     dTHR;
 
     if (dbis->debug >=3)
-        PerlIO_printf(DBILOGFP,"DBD::Ingres::dbd_st_STORE(%s)->{%s}\n",
-                imp_sth->name, key);
+        PerlIO_printf(DBILOGFP,"DBD::Ingres::dbd_st_STORE(%s)->{%s} = %d (true or false)\n",
+                imp_sth->name, key, on);
 
-    return FALSE; /* no values to store */
+    if (kl==16 && strEQ(key, "ing_empty_isnull"))
+        imp_sth->ing_empty_isnull = on;
+    else
+        return FALSE;
 
-    if (cachesv) /* cache value for later DBI 'quick' fetch? */
-        hv_store((HV*)SvRV(sth), key, (U32)kl, cachesv, 0);
     return TRUE;
 }
 
@@ -1879,8 +1910,7 @@ dbd_st_FETCH_attrib(sth, imp_sth, keysv)
     int i;
     int j;
     SV *retsv = NULL;
-    /* Default to caching results for DBI dispatch quick_FETCH  */
-    int cacheit = TRUE;
+
 
     if (dbis->debug >= 3)
         PerlIO_printf(DBILOGFP, "DBD::Ingres::dbd_st_FETCH(%s)->{%s}\n",
@@ -2102,21 +2132,13 @@ dbd_st_FETCH_attrib(sth, imp_sth, keysv)
         while(--j >= 0)
             av_store(av, j, newSViv((IV)imp_sth->ph_sqlda.sqlvar[j].sqllen));
     }
+    else if (kl==16 && strEQ(key, "ing_empty_isnull"))
+        retsv = imp_sth->ing_empty_isnull ? &PL_sv_yes : &PL_sv_no;
     else
     {
         return Nullsv;
     }
 
-
-    if (cacheit)
-    { /* cache for next time (via DBI quick_FETCH) */
-        SV **svp = hv_fetch((HV*)SvRV(sth), key, (U32)kl, 1);
-        sv_free(*svp);
-        *svp = retsv;
-
-        /*hv_store((HV*)SvRV(sth), key, kl, retsv, 0); */
-        (void)SvREFCNT_inc(retsv);      /* so sv_2mortal won't free it  */
-    }
     return sv_2mortal(retsv);
 }
 

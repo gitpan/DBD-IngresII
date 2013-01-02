@@ -1,4 +1,4 @@
-# Copyright (c) 2012, 2013 Tomasz Konojacki
+# Copyright (c) 2013 Tomasz Konojacki
 #
 # You may distribute under the terms of either the GNU General Public
 # License or the Artistic License, as specified in the Perl README file.
@@ -12,7 +12,7 @@ use DBD::IngresII;
 use DBI;
 use Encode;
 
-my $testtable = 'asdsdfga';
+my $testtable = 'asdsdfgza';
 
 sub get_dbname {
     # find the name of a database on which test are to be performed
@@ -47,11 +47,7 @@ unless (defined $dbname) {
     plan skip_all => 'DBI_DBNAME and DBI_DSN aren\'t present';
 }
 else {
-    unless ($ENV{DBI_TEST_UTF8}) {
-        plan skip_all => 'DBI_TEST_UTF8 isn\'t present';
-        exit 0;
-    }
-    plan tests => 12;
+    plan tests => 23;
 }
 
 my $dbh = connect_db($dbname);
@@ -63,45 +59,66 @@ eval { local $dbh->{RaiseError}=0;
 
 if ($dbh->ing_is_vectorwise) {
     ok($dbh->do("CREATE TABLE $testtable(lol VARCHAR(12)) WITH STRUCTURE=HEAP"),
-      'Create table');
+      'CREATE TABLE');
 }
 else {
     ok($dbh->do("CREATE TABLE $testtable(lol VARCHAR(12))"),
-      'Create table');
+      'CREATE TABLE');
 }
+
+$dbh->{ing_empty_isnull} = 0;
 
 ok($cursor = $dbh->prepare("INSERT INTO $testtable VALUES (?)"),
       'Prepare INSERT');
 
-ok($cursor->execute('ąść'), 'Execute INSERT');
-
-$dbh->{ing_enable_utf8} = 0;
+ok($cursor->execute(''), 'Execute INSERT');
 
 ok($cursor = $dbh->prepare("SELECT lol FROM $testtable"),
       'Prepare SELECT');
 
 ok($cursor->execute, 'Execute SELECT');
 
-my $ar = $cursor->fetchrow_hashref;
+ok((my $ar = $cursor->fetchrow_hashref), 'Fetch row');
 
-ok(!utf8::is_utf8($ar->{lol}), 'Check whether string has UTF-8 flag');
+ok(((defined $ar->{lol}) && ($ar->{lol} eq '')), 'Check whether string is empty');
 
-$dbh->{ing_enable_utf8} = 1;
+ok($dbh->do(qq{DELETE FROM $testtable WHERE lol = ''}), 'DELETE row');
+
+$dbh->{ing_empty_isnull} = 1;
+
+ok($cursor = $dbh->prepare("INSERT INTO $testtable VALUES (?)"),
+      'Prepare INSERT');
+
+ok($cursor->execute(''), 'Execute INSERT');
 
 ok($cursor = $dbh->prepare("SELECT lol FROM $testtable"),
       'Prepare SELECT');
 
 ok($cursor->execute, 'Execute SELECT');
 
-$ar = $cursor->fetchrow_hashref;
+ok(($ar = $cursor->fetchrow_hashref), 'Fetch row');
 
-ok(utf8::is_utf8($ar->{lol}), 'Check whether string has UTF-8 flag');
+ok((!defined $ar->{lol}), 'Check whether returned value is NULL');
 
-ok(($ar->{lol} eq 'ąść'), 'Check string equality');
+ok($dbh->do("DELETE FROM $testtable WHERE lol IS NULL"), 'DELETE row');
 
-ok($cursor->finish, 'Finish cursor');
+ok($cursor = $dbh->prepare("INSERT INTO $testtable VALUES (?)", {ing_empty_isnull => 0}),
+      'Prepare INSERT');
 
-ok($dbh->do("DROP TABLE $testtable"), 'Drop table');
+ok($cursor->execute(''), 'Execute INSERT');
+
+ok($cursor = $dbh->prepare("SELECT lol FROM $testtable"),
+      'Prepare SELECT');
+
+ok($cursor->execute, 'Execute SELECT');
+
+ok(($ar = $cursor->fetchrow_hashref), 'Fetch row');
+
+ok(((defined $ar->{lol}) && ($ar->{lol} eq '')), 'Check whether string is empty');
+
+ok($cursor->finish, 'Finish SELECT cursor');
+
+ok($dbh->do("DROP TABLE $testtable"), 'DROP TABLE');
 
 $dbh and $dbh->commit;
 $dbh and $dbh->disconnect;

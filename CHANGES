@@ -1,3 +1,7 @@
+v0.88     2013.01.02
+ - Code that generates statement names was rewritten (thanks to Dennis Roesler
+   for bug report)
+ - There is new attribute, ing_empty_isnull (thanks to Dennis Roesler for code)
 v0.87     2012.10.26
  - Style fixes (explicit return)
 v0.86     2012.10.25

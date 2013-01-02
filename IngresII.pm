@@ -1,6 +1,6 @@
 #
-#   Copyright (c) 1996-2000 Henrik Tougaard
-#   Copytight (c) 2012 Tomasz Konojacki
+#   Copyright (c) 1996-2000  Henrik Tougaard
+#   Copytight (c) 2012, 2013 Tomasz Konojacki
 #
 #   You may distribute under the terms of either the GNU General Public
 #   License or the Artistic License, as specified in the Perl README file.
@@ -40,7 +40,7 @@ DBD::IngresII - DBI driver for Actian Ingres and Actian Vectorwise RDBMS
 
     our @ISA = qw(DynaLoader);
 
-    our $VERSION = '0.87';
+    our $VERSION = '0.88';
 
     bootstrap DBD::IngresII $VERSION;
 
@@ -957,6 +957,17 @@ Note that you should use this attribute only if C<II_CHARSET> is set to C<UTF8>.
 This method checks whether database handle is connected to Actian Vectorwise
 database.
 
+=head2 ing_empty_isnull
+
+    $dbh->{ing_empty_isnull} = 1;
+    # or:
+    $sth->{ing_empty_isnull} = 1;
+
+When this attribute is set to 1, then all empty strings passed to c<execute> will
+be interpreted as NULLs by Ingres.
+
+By default it is set to 0.
+
 =head1 FEATURES NOT IMPLEMENTED
 
 =head2 state
@@ -1307,6 +1318,10 @@ Sorted from latest contribution to first one. If I forgot about someone, mail me
 at me@xenu.tk.
 
 =over 4
+
+=item *
+
+Dennis Roesler
 
 =item *
 

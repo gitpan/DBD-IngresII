@@ -13,5 +13,6 @@ t/dbi.t
 t/event.t
 t/exec.t
 t/nchar.t
+t/null.t
 t/quote.t
 t/utf8.t
