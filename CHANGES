@@ -1,3 +1,8 @@
+v0.89     2013.01.05
+ - ing_empty_isnull is now honoured for integers and floats (thanks to Dennis Roesler 
+   for code)
+ - ->table_info and ->column_info was rewritten (thanks to Dennis Roesler 
+   for code)
 v0.88     2013.01.02
  - Code that generates statement names was rewritten (thanks to Dennis Roesler
    for bug report)

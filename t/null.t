@@ -9,7 +9,7 @@ use utf8;
 
 use Test::More;
 use DBD::IngresII;
-use DBI;
+use DBI qw(:sql_types);
 use Encode;
 
 my $testtable = 'asdsdfgza';
@@ -47,7 +47,7 @@ unless (defined $dbname) {
     plan skip_all => 'DBI_DBNAME and DBI_DSN aren\'t present';
 }
 else {
-    plan tests => 23;
+    plan tests => 40;
 }
 
 my $dbh = connect_db($dbname);
@@ -116,9 +116,66 @@ ok(($ar = $cursor->fetchrow_hashref), 'Fetch row');
 
 ok(((defined $ar->{lol}) && ($ar->{lol} eq '')), 'Check whether string is empty');
 
-ok($cursor->finish, 'Finish SELECT cursor');
+ok($cursor->finish, 'Finish cursor');
 
 ok($dbh->do("DROP TABLE $testtable"), 'DROP TABLE');
+
+#
+
+if ($dbh->ing_is_vectorwise) {
+    ok($dbh->do("CREATE TABLE $testtable(lol INT4) WITH STRUCTURE=HEAP"),
+      'CREATE TABLE');
+}
+else {
+    ok($dbh->do("CREATE TABLE $testtable(lol INT4)"),
+      'CREATE TABLE');
+}
+
+$dbh->{ing_empty_isnull} = 0;
+
+ok($cursor = $dbh->prepare("INSERT INTO $testtable VALUES (?)"),
+      'Prepare INSERT');
+
+{
+    no warnings;
+    ok($cursor->bind_param(1, '', {TYPE => SQL_INTEGER}), 'bind_param');
+}
+
+ok($cursor->execute, 'Execute INSERT');
+
+ok($cursor = $dbh->prepare("SELECT lol FROM $testtable"),
+      'Prepare SELECT');
+
+ok($cursor->execute, 'Execute SELECT');
+
+ok(($ar = $cursor->fetchrow_hashref), 'Fetch row');
+
+ok(((defined $ar->{lol}) && ($ar->{lol} == 0)), 'Check whether int equals 0');
+
+ok($dbh->do("DELETE FROM $testtable WHERE lol = 0"), 'DELETE row');
+
+$dbh->{ing_empty_isnull} = 1;
+
+ok($cursor = $dbh->prepare("INSERT INTO $testtable VALUES (?)"),
+      'Prepare INSERT');
+
+{
+    no warnings;
+    ok($cursor->bind_param(1, '', { TYPE => SQL_INTEGER }), 'bind_param');
+}
+
+ok($cursor->execute, 'Execute INSERT');
+
+ok($cursor = $dbh->prepare("SELECT lol FROM $testtable"),
+      'Prepare SELECT');
+
+ok($cursor->execute, 'Execute SELECT');
+
+ok(($ar = $cursor->fetchrow_hashref), 'Fetch row');
+
+ok((!defined $ar->{lol}), 'Check whether int equals 0');
+
+ok($cursor->finish, 'Finish SELECT cursor');
 
 $dbh and $dbh->commit;
 $dbh and $dbh->disconnect;

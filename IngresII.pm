@@ -40,7 +40,7 @@ DBD::IngresII - DBI driver for Actian Ingres and Actian Vectorwise RDBMS
 
     our @ISA = qw(DynaLoader);
 
-    our $VERSION = '0.88';
+    our $VERSION = '0.89';
 
     bootstrap DBD::IngresII $VERSION;
 
@@ -184,20 +184,115 @@ DBD::IngresII - DBI driver for Actian Ingres and Actian Vectorwise RDBMS
 
     sub table_info {
         my ($dbh, $catalog, $schema, $table, $type) = @_;
-        $schema = ($schema) ? $schema : q/%/;
-        $table = ($table) ? $table : q/%/;
-        my $sth = $dbh->prepare(qq{
-            SELECT VARCHAR(null) AS TABLE_CAT, table_owner AS TABLE_SCHEM, table_name, 'TABLE' AS TABLE_TYPE
-            FROM iitables WHERE table_type='T' AND VARCHAR(table_owner) LIKE '$schema' AND VARCHAR(table_name) LIKE '$table'
-        });
-#        my $sth = $dbh->prepare("
-#	  SELECT VARCHAR(null) AS TABLE_CAT, table_owner AS TABLE_SCHEM,	                 table_name, 'TABLE' AS TABLE_TYPE
-#	  FROM IITABLES
-#	  WHERE table_type='T'
-#          UNION
-#          SELECT null, table_owner, table_name, 'VIEW'
-#          FROM IITABLES
-#          WHERE table_type ='V'");
+
+        $schema = $schema ? $schema : q/%/;
+        $table = $table ? $table : q/%/;
+        $type = $type ? $type : 'table';
+
+        my $schemaPred = ($schema =~ /%/) ? ' like ' : ' = ';
+        my $tablePred = ($table =~ /%/) ? ' like ' : ' = ';
+
+        my @types = split(/,/, $type);
+        my $include_synonyms = 0;
+
+        my @tTypes;
+        for my $tType ( @types ) {
+            $tType =~ s/'|"//g;
+            $tType =~ s/\s//g;
+            $include_synonyms++ if $tType =~ /synonym/i;
+
+            if ($tType =~ /^table/i) {
+                $tType = 'T';
+            }
+            elsif ($tType =~ /^view/i) {
+                $tType = 'V';
+            }
+            elsif ($tType =~ /^index/i) {
+                $tType = 'I';
+            }
+            elsif ($tType =~ /^synonym/i) {
+                $tType = 'S';
+            }
+            else {
+                $tType = 'T';
+            }
+
+            push( @tTypes, $dbh->quote($tType) );
+        }
+
+        my $types = '(' . join(',', @tTypes) . ')';
+
+        my $sth;
+
+        if ( $include_synonyms ) {
+            $sth = $dbh->prepare( qq{
+                select varchar(null) as table_cat,
+                table_owner as table_schem,
+                table_name,
+                case table_type
+                    when 'T' then 'TABLE'
+                    when 'V' then 'VIEW'
+                    when 'I' then 'INDEX'
+                    else table_type
+                end as table_type,
+                varchar(null) as remarks,
+                system_use,
+                num_rows,
+                storage_structure,
+                row_width,
+                modify_date,
+                location_name,
+                table_pagesize
+                from iitables
+                where table_type in $types
+                and table_owner $schemaPred '$schema'
+                and table_name $tablePred '$table'
+                and system_use = 'U'
+
+                union
+
+                select varchar(null) as table_cat,
+                synonym_owner as table_schem,
+                synonym_name as table_name,
+                table_type = 'SYNONYM',
+                varchar(null) as remarks,
+                varchar(null) as system_use,
+                varchar(null) as num_rows,
+                varchar(null) as storage_structure,
+                varchar(null) as row_width,
+                varchar(null) as modify_date,
+                varchar(table_name) as location_name,
+                varchar(null) as table_pagesize
+                from iisynonyms
+                where synonym_owner $schemaPred '$schema'
+            });
+        }
+        else {
+            $sth = $dbh->prepare(qq{
+                select varchar(null) as table_cat,
+                table_owner as table_schem,
+                table_name,
+                case table_type
+                    when 'T' then 'TABLE'
+                    when 'V' then 'VIEW'
+                    when 'I' then 'INDEX'
+                    else table_type
+                end as table_type,
+                varchar(null) as remarks,
+                num_rows,
+                storage_structure,
+                row_width,
+                modify_date,
+                location_name,
+                table_pagesize
+                from iitables
+                where table_type in $types
+                and VARCHAR(table_owner) $schemaPred '$schema'
+                and VARCHAR(table_name) $tablePred '$table'
+                and varchar(system_use) = 'U'
+            });
+        }
+
         return unless $sth;
         $sth->execute;
         return $sth;
@@ -205,19 +300,45 @@ DBD::IngresII - DBI driver for Actian Ingres and Actian Vectorwise RDBMS
 
     sub column_info {
         my ($dbh, $catalog, $schema, $table, $column) = @_;
+
         $schema = ($schema) ? $schema : q/%/;
         $table = ($table) ? $table : q/%/;
         $column = ($column) ? $column : q/%/;
+
+        my $schemaPred = ($schema =~ /%/) ? ' like ' : ' = ';
+        my $tablePred = ($table =~ /%/) ? ' like ' : ' = ';
+        my $colPred = ($column =~ /%/) ? ' like ' : ' = ';
+
         my $sth = $dbh->prepare(qq{
-            SELECT VARCHAR(null) AS TABLE_CAT, table_owner AS TABLE_SCHEM, table_name AS TABLE_NAME, column_name AS COLUMN_NAME,
-            column_ingdatatype AS DATA_TYPE, column_datatype AS TYPE_NAME, column_length AS COLUMN_SIZE, INT(0) AS BUFFER_LENGTH,
-            column_scale AS DECIMAL_DIGITS, INT(0) AS NUM_PREC_RADIX, column_nulls AS NULLABLE, VARCHAR('') AS REMARKS,
-            column_default_val AS COLUMN_DEF, column_datatype AS SQL_DATA_TYPE, VARCHAR(null) AS SQL_DATETIME_SUB,
-            INT(0) AS CHAR_OCTET_LENGTH, column_sequence AS ORDINAL_POSITION, column_nulls as IS_NULLABLE
-            FROM iicolumns
-            WHERE VARCHAR(table_owner) LIKE '$schema' AND VARCHAR(table_name) LIKE '$table' AND VARCHAR(column_name) LIKE '$column'
-            ORDER BY table_owner, table_name, column_sequence
+            select
+            varchar(null) as table_cat,
+            varchar(col.table_owner) as stable_schem,
+            varchar(col.table_name) as table_name,
+            varchar(column_name) as column_name,
+            column_ingdatatype as date_type,
+            column_datatype as type_name,
+            column_length as column_size,
+            int(0) as buffer_length,
+            column_scale as decimal_digits,
+            int(0) as num_prec_radix,
+            column_nulls as nullable,
+            varchar('') as remarks,
+            column_default_val as column_def,
+            column_datatype as sql_data_type,
+            varchar(null) as sql_datetime_sub,
+            int(0) as char_octet_length,
+            column_sequence as ordinal_position,
+            column_nulls as is_nullable,
+            syn.synonym_name
+            from iicolumns col
+            left join iisynonyms syn on
+            syn.table_name = col.table_name
+            where col.table_owner $schemaPred '$schema'
+            and (col.table_name $tablePred '$table' or syn.synonym_name $tablePred '$table')
+            and column_name $colPred '$column'
+            order by col.table_owner, col.table_name, column_sequence
         });
+
         return unless $sth;
         $sth->execute;
         return $sth;
@@ -963,8 +1084,14 @@ database.
     # or:
     $sth->{ing_empty_isnull} = 1;
 
-When this attribute is set to 1, then all empty strings passed to c<execute> will
-be interpreted as NULLs by Ingres.
+When this attribute is set to 1, then all empty strings passed to C<execute> or
+C<bind_param> will be interpreted as NULLs by Ingres.
+
+If you are using this attribute only for statement handle, then you need to set it
+before binding params, so it will be honoured.
+
+After creation of statement handle, setting C<ing_empty_isnull> attribute in
+database_handle will have no effect on statement handle.
 
 By default it is set to 0.
 

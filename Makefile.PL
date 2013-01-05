@@ -43,6 +43,11 @@ my %opts = (
     AUTHOR        => 'Henrik Tougaard (htoug@cpan.org)',
     ABSTRACT_FROM => 'IngresII.pm',
     OBJECT        => 'IngresII$(OBJ_EXT) dbdimp$(OBJ_EXT)',
+    META_MERGE    => {
+         resources => {
+             repository => 'http://dbdingresii.codeplex.com'
+         }
+    },
     clean         => {
         FILES => 'dbdimp.c IngresII.h IngresII.sc IngresII.xsh'
     },
@@ -53,7 +58,7 @@ my %opts = (
     macro         => {
         ESQLC    => $esqlc,
         ESQLCOPT => '-o.h -w -p'
-    },
+    }
 );
 
 print "\nConfiguring DBD::IngresII...\n";

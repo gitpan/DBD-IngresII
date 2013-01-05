@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               DBD-IngresII
-version:            0.88
+version:            0.89
 abstract:           DBI driver for Actian Ingres and Actian Vectorwise RDBMS
 author:
     - Henrik Tougaard (htoug@cpan.org)
@@ -13,6 +13,8 @@ build_requires:
 requires:
     Config:  0
     DBI:     0
+resources:
+    repository:  http://dbdingresii.codeplex.com
 no_index:
     directory:
         - t
