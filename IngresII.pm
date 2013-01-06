@@ -40,7 +40,7 @@ DBD::IngresII - DBI driver for Actian Ingres and Actian Vectorwise RDBMS
 
     our @ISA = qw(DynaLoader);
 
-    our $VERSION = '0.89';
+    our $VERSION = '0.90';
 
     bootstrap DBD::IngresII $VERSION;
 
@@ -301,13 +301,13 @@ DBD::IngresII - DBI driver for Actian Ingres and Actian Vectorwise RDBMS
     sub column_info {
         my ($dbh, $catalog, $schema, $table, $column) = @_;
 
-        $schema = ($schema) ? $schema : q/%/;
-        $table = ($table) ? $table : q/%/;
-        $column = ($column) ? $column : q/%/;
+        $schema = $schema ? $schema : q/%/;
+        $table = $table ? $table : q/%/;
+        $column = $column ? $column : q/%/;
 
-        my $schemaPred = ($schema =~ /%/) ? ' like ' : ' = ';
-        my $tablePred = ($table =~ /%/) ? ' like ' : ' = ';
-        my $colPred = ($column =~ /%/) ? ' like ' : ' = ';
+        my $schemaPred = ($schema =~ /%|_/) ? ' like ' : ' = ';
+        my $tablePred = ($table =~ /%|_/) ? ' like ' : ' = ';
+        my $colPred = ($column =~ /%|_/) ? ' like ' : ' = ';
 
         my $sth = $dbh->prepare(qq{
             select

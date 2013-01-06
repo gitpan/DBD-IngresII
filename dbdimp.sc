@@ -1382,50 +1382,52 @@ dbd_bind_ph (sth, imp_sth, param, value, sql_type, attribs, is_inout, maxlen)
             *(double *)var->sqldata = (double)SvNV(value);
 
         break;
-    case 3: {/* string */
-        STRLEN len;
-        char *string;
-
-        var->sqltype = IISQ_VCH_TYPE;
-
-        if (SvOK(value))
-            string = SvPV(value, len);
-        else
+    case 3: /* string */
         {
-            string = 0;
-            len = 0;
-        }
+            STRLEN len;
+            char *string;
 
+            var->sqltype = IISQ_VCH_TYPE;
 
-        if (SvOK(value))
-        {
-            if (imp_sth->ing_empty_isnull && (SvCUR(value) == 0))
-            {
-               string = NULL;
-               len = 0;
-               force_null = 1;
-            }
-            else
+            if (SvOK(value))
                 string = SvPV(value, len);
+            else
+            {
+                string = 0;
+                len = 0;
+            }
+
+
+            if (SvOK(value))
+            {
+                if (imp_sth->ing_empty_isnull && (SvCUR(value) == 0))
+                {
+                   string = NULL;
+                   len = 0;
+                   force_null = 1;
+                }
+                else
+                    string = SvPV(value, len);
+            }
+
+            var->sqllen = (unsigned short)len;
+            Renew(var->sqldata, len + sizeof(short), char);
+
+            if (SvOK(value) && !force_null)
+            {
+                *(short *)var->sqldata = (short)len;
+                Copy(string, var->sqldata + sizeof(short), len, char);
+            }
+
+            /* This works around a bug in Ingres where inserting byte fields
+             * as IISQ_VCH_TYPE fails if the strings ends in a \0.  It works
+             * if we use VBYTE_TYPE, but we can't default to that as you
+             * cannot use it to insert dates. */
+            if (sql_type == SQL_BINARY)
+                var->sqltype = IISQ_VBYTE_TYPE;
+
+            break; 
         }
-
-        var->sqllen = (unsigned short)len;
-        Renew(var->sqldata, len + sizeof(short), char);
-
-        if (SvOK(value) && !force_null)
-        {
-            *(short *)var->sqldata = (short)len;
-            Copy(string, var->sqldata + sizeof(short), len, char);
-        }
-
-        /* This works around a bug in Ingres where inserting byte fields
-         * as IISQ_VCH_TYPE fails if the strings ends in a \0.  It works
-         * if we use VBYTE_TYPE, but we can't default to that as you
-         * cannot use it to insert dates. */
-        if (sql_type == SQL_BINARY)
-            var->sqltype = IISQ_VBYTE_TYPE;
-
-        break; }
     case 4:
         /* blob */
         {
@@ -1684,49 +1686,32 @@ dbd_st_fetch(sth, imp_sth)
                 {
                     U16 *utf16;
                     short len = *(short *)var->sqldata;
-                    U16 *buf = (U16 *)(var->sqldata + sizeof(short));
-                    
-                    if (sizeof(wchar_t) == 4)
-                    {
-                        /* For NCHAR type, Ingres always returns UTF-16 stored in low 16 bits
-                         * of wchar_t, so if sizeof(wchar_t) == 2 there is no problem. On
-                         * platforms with 32-bit wchar_t we only need to get low 16 bits.
-                         */
+                    wchar_t *buf = (wchar_t *)(var->sqldata + sizeof(short));
+                    short i = 0;
+
+                    /* For NCHAR type, Ingres always returns UTF-16 stored in high 16 bits
+                     * of wchar_t, so if sizeof(wchar_t) == 2 there is no problem. On
+                     * platforms with 32-bit wchar_t we only need to get high 16 bits.
+                     */
                            
-                        short i = 0;
-                        short e = 0;
-
-                        Newx(utf16, len, U16);
-
-                        while ((len * (short)sizeof(U16)) > i)
-                        {
-                            if (i % 2 != 0)
-                            {
-                                utf16[e] = (U16)buf[i];
-                                ++e;
-                            }
-                            ++i;
-                        }
-
-                        sv_setpvn(sv, (char *)utf16, len * sizeof(U16));
-                    }
-                    else if (sizeof(wchar_t) == 2)
-                    {
-                        utf16 = buf;
-                        sv_setpvn(sv, (char *)utf16, len * sizeof(U16));
-                    }
-                    else
+                    if (sizeof(wchar_t) < 2)
                     {
                         /* Uh-Oh, We're In Trouble, 
                          * Something's Come Along And It's Burst Our Bubble
                          */
-                        utf16 = buf;
-                        sv_setpvn(sv, (char *)utf16, len * sizeof(U16));
-                        if (dbis->debug >= 3)
-                            PerlIO_printf(DBILOGFP,
-                                "wchar_t has unsupported size %lu, DBD::IngresII will probably output garbage\n",
-                                (unsigned long)sizeof(wchar_t));
+                        die("Unsupported size of wchar_t (%d)", sizeof(wchar_t));
                     }
+
+                    Newx(utf16, len, U16);
+                    
+                    while (len > i)
+                    {
+                        /* Get 16 high bits */
+                        *(utf16 + i) = (U16)(*(buf + i) >> ((sizeof(wchar_t) * 8) - 16));
+                        ++i;
+                    }
+
+                    sv_setpvn(sv, (char *)utf16, len * sizeof(U16));
 
                     if (dbis->debug >= 3)
                     {
@@ -1747,8 +1732,8 @@ dbd_st_fetch(sth, imp_sth)
                         Safefree(utf16_hex);
                     }
 
-                    if (sizeof(wchar_t) == 4)
-                        Safefree(utf16);
+                    Safefree(utf16);
+
                     break;
                 }
             case 'l':
