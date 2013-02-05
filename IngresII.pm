@@ -40,7 +40,7 @@ DBD::IngresII - DBI driver for Actian Ingres and Actian Vectorwise RDBMS
 
     our @ISA = qw(DynaLoader);
 
-    our $VERSION = '0.90';
+    our $VERSION = '0.91';
 
     bootstrap DBD::IngresII $VERSION;
 
@@ -1395,19 +1395,17 @@ Myself - C<me@xenu.tk>
 
 =back
 
-=head1 BINARY BUILDS (PPM REPOSITORY)
+=head1 BAZAAR REPOSITORY
 
-You can download binary builds of DBD::IngresII using PPM repository at:
+DBD::IngresII is hosted at Launchpad - L<https://launchpad.net/dbdingresii>.
+You can fetch latest development version of DBD::IngresII from following
+repository:
 
-    http://ppm.xenu.tk
-
-Builds are provided only for Windows version of ActivePerl.
+    lp:dbdingresii
 
 =head1 GIT REPOSITORY
 
-DBD::IngresII is hosted at CodePlex - L<http://dbdingresii.codeplex.com>.
-You can fetch latest development version of DBD::IngresII from following
-repository:
+Following git mirrors of DBD::IngresII repository are available:
 
     https://git01.codeplex.com/dbdingresii
     Mirror: git://github.com/xenu/dbd-ingresii.git

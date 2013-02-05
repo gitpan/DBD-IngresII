@@ -47,7 +47,7 @@ unless (defined $dbname) {
     plan skip_all => 'DBI_DBNAME and DBI_DSN aren\'t present';
 }
 else {
-    plan tests => 40;
+    plan tests => 48;
 }
 
 my $dbh = connect_db($dbname);
@@ -175,7 +175,32 @@ ok(($ar = $cursor->fetchrow_hashref), 'Fetch row');
 
 ok((!defined $ar->{lol}), 'Check whether int equals 0');
 
-ok($cursor->finish, 'Finish SELECT cursor');
+ok($cursor = $dbh->prepare("INSERT INTO $testtable VALUES (?)"),
+      'Prepare INSERT');
+
+ok($cursor->bind_param_array(1, 1, SQL_INTEGER), 'bind_param_array, it used to crash');
+
+ok($cursor->finish, 'finish INSERT cursor');
+
+ok($dbh->do("DROP TABLE $testtable"), 'DROP TABLE');
+
+if ($dbh->ing_is_vectorwise) {
+    ok($dbh->do("CREATE TABLE $testtable(abc FLOAT) WITH STRUCTURE=HEAP"),
+      'CREATE TABLE');
+}
+else {
+    ok($dbh->do("CREATE TABLE $testtable(abc FLOAT)"),
+      'CREATE TABLE');
+}
+
+ok($cursor = $dbh->prepare("INSERT INTO $testtable VALUES (?)"),
+      'Prepare INSERT');
+
+ok($cursor->bind_param_array(1, 1.1, SQL_DOUBLE), 'bind_param_array, it used to crash');
+
+ok($cursor->finish, 'finish INSERT cursor');
+
+ok($dbh->do("DROP TABLE $testtable"), 'DROP TABLE');
 
 $dbh and $dbh->commit;
 $dbh and $dbh->disconnect;

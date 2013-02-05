@@ -1351,7 +1351,7 @@ dbd_bind_ph (sth, imp_sth, param, value, sql_type, attribs, is_inout, maxlen)
             var->sqllen = sizeof(IV);
             Renew(var->sqldata, var->sqllen, char);
 
-            if (imp_sth->ing_empty_isnull && (SvCUR(value) == 0))
+            if (imp_sth->ing_empty_isnull && ((SvPOK(value) && (SvCUR(value) == 0)) || !SvIOK(value)))
 	        {
 	    	    if (dbis->debug >= 2)
 		            PerlIO_printf(DBILOGFP, "### DBD::Ingres::dbd_bind_ph(%d) NaN using NULL\n", param_no);
@@ -1371,7 +1371,8 @@ dbd_bind_ph (sth, imp_sth, param, value, sql_type, attribs, is_inout, maxlen)
 
         Renew(var->sqldata, var->sqllen, char);
 
-        if ( imp_sth->ing_empty_isnull && (SvCUR(value) == 0) )
+
+        if (imp_sth->ing_empty_isnull && ((SvPOK(value) && (SvCUR(value) == 0)) || !SvNOK(value)))
 	    {
 	        if (dbis->debug >= 2)
 	            PerlIO_printf(DBILOGFP, "### DBD::Ingres::dbd_bind_ph(%d) NaN using NULL\n", param_no);
