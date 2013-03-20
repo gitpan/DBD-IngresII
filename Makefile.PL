@@ -45,7 +45,7 @@ my %opts = (
     OBJECT        => 'IngresII$(OBJ_EXT) dbdimp$(OBJ_EXT)',
     META_MERGE    => {
          resources => {
-             repository => 'http://dbdingresii.codeplex.com'
+             repository => 'http://chiselapp.com/user/xenu/repository/dbd-ingresii'
          }
     },
     clean         => {

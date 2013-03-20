@@ -40,7 +40,7 @@ DBD::IngresII - DBI driver for Actian Ingres and Actian Vectorwise RDBMS
 
     our @ISA = qw(DynaLoader);
 
-    our $VERSION = '0.91';
+    our $VERSION = '0.92';
 
     bootstrap DBD::IngresII $VERSION;
 
@@ -189,8 +189,8 @@ DBD::IngresII - DBI driver for Actian Ingres and Actian Vectorwise RDBMS
         $table = $table ? $table : q/%/;
         $type = $type ? $type : 'table';
 
-        my $schemaPred = ($schema =~ /%/) ? ' like ' : ' = ';
-        my $tablePred = ($table =~ /%/) ? ' like ' : ' = ';
+        my $schemaPred = ($schema =~ /%|_/) ? ' like ' : ' = ';
+        my $tablePred = ($table =~ /%|_/) ? ' like ' : ' = ';
 
         my @types = split(/,/, $type);
         my $include_synonyms = 0;
@@ -349,7 +349,7 @@ DBD::IngresII - DBI driver for Actian Ingres and Actian Vectorwise RDBMS
 
         return unless $ident;
 
-        if ($ident == 17) {
+        if ($ident == 17) { # SQL_DBMS_NAME
             my $sth = $dbh->prepare("SELECT dbmsinfo('_version')");
 
             return unless $sth;
@@ -373,7 +373,7 @@ DBD::IngresII - DBI driver for Actian Ingres and Actian Vectorwise RDBMS
 
             return 'unknown';
         }
-        elsif ($ident == 18) {
+        elsif ($ident == 18) { # SQL_DBMS_VER
             my $sth = $dbh->prepare("SELECT dbmsinfo('_version')");
 
             return unless $sth;
@@ -389,10 +389,18 @@ DBD::IngresII - DBI driver for Actian Ingres and Actian Vectorwise RDBMS
 
             return 'unknown';
         }
-        elsif ($ident == 29) { return q{'}; }
-        elsif ($ident == 41) { return '.'; }
-        else  { return; }
-
+        elsif ($ident == 29 ) { return q{'}        } # SQL_IDENTIFIER_QUOTE_CHAR
+        elsif ($ident == 30 ) { return 256         } # SQL_MAXIMUM_COLUMN_NAME_LENGTH
+        elsif ($ident == 31 ) { return 64          } # SQL_MAXIMUM_CURSOR_NAME_LENGTH
+        elsif ($ident == 32 ) { return 32          } # SQL_MAXIMUM_SCHEMA_NAME_LENGTH
+        elsif ($ident == 35 ) { return 256         } # SQL_MAXIMUM_TABLE_NAME_LENGTH
+        elsif ($ident == 107) { return 32          } # SQL_MAXIMUM_USER_NAME_LENGTH
+        elsif ($ident == 21 ) { return 'Y'         } # SQL_PROCEDURES
+        elsif ($ident == 40 ) { return 'PROCEDURE' } # SQL_PROCEDURE_TERM
+        elsif ($ident == 41 ) { return '.'         } # SQL_QUALIFIER_NAME_SEPARATOR
+        elsif ($ident == 39 ) { return 'USER'      } # SQL_SCHEMA_TERM
+        elsif ($ident == 45 ) { return 'TABLE'     } # SQL_TABLE_TERM
+        else  { return } # Unknown
 
     }
 
@@ -511,8 +519,8 @@ DBD::IngresII - DBI driver for Actian Ingres and Actian Vectorwise RDBMS
                 $new_str .= $_;
             }
         }
-        return $new_str;
 
+        return $new_str;
     }
 
     sub ing_bool_to_str {
@@ -1395,20 +1403,11 @@ Myself - C<me@xenu.tk>
 
 =back
 
-=head1 BAZAAR REPOSITORY
+=head1 FOSSIL REPOSITORY
 
-DBD::IngresII is hosted at Launchpad - L<https://launchpad.net/dbdingresii>.
-You can fetch latest development version of DBD::IngresII from following
-repository:
+DBD::IngresII Fossil repository is hosted at Chisel:
 
-    lp:dbdingresii
-
-=head1 GIT REPOSITORY
-
-Following git mirrors of DBD::IngresII repository are available:
-
-    https://git01.codeplex.com/dbdingresii
-    Mirror: git://github.com/xenu/dbd-ingresii.git
+    http://chiselapp.com/user/xenu/repository/dbd-ingresii
 
 =head1 REPORTING BUGS
 

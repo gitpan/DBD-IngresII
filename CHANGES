@@ -1,10 +1,14 @@
+v0.92     2013.03.20
+ - ->get_info provides more information
+ - I have forgot to include Dennis Roesler's patch to ->table_info (it was meant to be
+   included in v0.90)
 v0.91     2013.02.05
  - Prepare won't crash with ing_empty_isnull enabled (thanks to Dennis Roesler 
-   for code).
+   for code)
  - null.t now DROPs table which it creates.
 v0.90     2013.01.06
- - ->column_info and ->table_info now will work with single character wildcards (thanks
-   to Dennis Roesler for code)
+ - ->column_info and ->table_info now will work with single character wildcards 
+   (thanks to Dennis Roesler for code)
  - Much better NCHAR/NVARCHAR handling
 v0.89     2013.01.05
  - ing_empty_isnull is now honoured for integers and floats (thanks to Dennis Roesler 
