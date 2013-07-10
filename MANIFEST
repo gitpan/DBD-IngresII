@@ -16,3 +16,4 @@ t/nchar.t
 t/null.t
 t/quote.t
 t/utf8.t
+META.json                                Module JSON meta-data (added by MakeMaker)

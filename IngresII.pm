@@ -40,7 +40,7 @@ DBD::IngresII - DBI driver for Actian Ingres and Actian Vectorwise RDBMS
 
     our @ISA = qw(DynaLoader);
 
-    our $VERSION = '0.92';
+    our $VERSION = '0.93';
 
     bootstrap DBD::IngresII $VERSION;
 
@@ -1405,9 +1405,9 @@ Myself - C<me@xenu.tk>
 
 =head1 FOSSIL REPOSITORY
 
-DBD::IngresII Fossil repository is hosted at Chisel:
+DBD::IngresII Fossil repository is hosted at xenu.tk:
 
-    http://chiselapp.com/user/xenu/repository/dbd-ingresii
+    http://code.xenu.tk/repos.cgi/dbd-ingresii
 
 =head1 REPORTING BUGS
 

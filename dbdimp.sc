@@ -831,18 +831,13 @@ dbd_get_handler(fbh)
 {
     EXEC SQL BEGIN DECLARE SECTION;
         int data_end;
-        unsigned long size_read;
+        int size_read;
         char buf[HANDLER_READ_SIZE];
-        unsigned long max_to_read = sizeof(buf);
+        int max_to_read = sizeof(buf);
     EXEC SQL END DECLARE SECTION;
-
-    #ifndef __LP64__
-        STRLEN offset, data_len, trunc_len;
-    #else
-        U32 offset, data_len, trunc_len;
-        STRLEN d;
-    #endif
-
+    
+    unsigned long trunc_len;
+    int offset, data_len;
     char *data;
     D_imp_sth(fbh->sth);
 
@@ -856,7 +851,7 @@ dbd_get_handler(fbh)
      * data to be truncated at a length less than HANDLER_READ_SIZE.
      * We need to read 1 extra so we know when we really have truncated. */
     if (max_to_read > trunc_len + 1)
-        max_to_read = (unsigned long)(trunc_len + 1);
+        max_to_read = trunc_len + 1;
 
     /* We can use indic as the truncated indicator, because Ingres tells
      * us that the get handler is not called at all when the data is null.
@@ -880,63 +875,33 @@ dbd_get_handler(fbh)
             return 0;
         }
 
-        #ifndef __LP64__
-            if (offset + size_read > trunc_len)
-            {
-        #else
-            if (offset + (U32)size_read > trunc_len)
-            {
-        #endif  
-                /* we've read the maximum, time to truncate. */
-                size_read = (unsigned long)(trunc_len - offset);
-                fbh->indic = 1;
-                data_end = 1;
-                EXEC SQL ENDDATA;
-            }
+        if ((offset + size_read) > trunc_len)
+        {
+            /* we've read the maximum, time to truncate. */
+            size_read = (int)(trunc_len - (unsigned long)offset);
+            fbh->indic = 1;
+            data_end = 1;
+            EXEC SQL ENDDATA;
+        }
 
-        #if 0
-            /* This looks tidy, but sv_grow does tricks with PV offsets that
-             * mean we often end up allocating almost twice as much memory.
-             * Obviously for long data types that isn't a good idea. */
-            data = SvGROW(fbh->sv, offset + size_read + 1);
-        #else
-            #ifndef __LP64__
-                data = SvPV(fbh->sv, data_len);
-                if (data_len < offset + size_read + 1)
-                {
-                    data = SvPVX(fbh->sv);
-                    data_len = offset + size_read + 1;
-                    /* We probably should expose a setting to allow user-tunable
-                     * sizes for extending the memory alloc by.  Perhaps a
-                     * $dbh->{LongChunkSize} or similar. */
-                    Renew(data, data_len, char);
-                    SvPV_set(fbh->sv, data);
-                    SvLEN_set(fbh->sv, data_len);
-                }
-            #else
-                d = (STRLEN)data_len;
-                data = SvPV(fbh->sv, d);
-                if (data_len < offset + (U32)size_read + 1)
-                {
-                    data = SvPVX(fbh->sv);
-                    data_len = offset + (U32)size_read + 1;
-                    d = (STRLEN)data_len;
-                    Renew(data, d, char);
-                    SvPV_set(fbh->sv, data);
-                    SvLEN_set(fbh->sv, d);
-                }
-            #endif
-        #endif
+        data = SvPV(fbh->sv, data_len);
+        if (data_len < (offset + size_read + 1))
+        {
+            data = SvPVX(fbh->sv);
+            data_len = offset + size_read + 1;
+            
+            /* We probably should expose a setting to allow user-tunable
+             * sizes for extending the memory alloc by.  Perhaps a
+             * $dbh->{LongChunkSize} or similar. */
+  
+            Renew(data, data_len, char);
+            SvPV_set(fbh->sv, data);
+            SvLEN_set(fbh->sv, data_len);
+        }
 
-        #ifndef __LP64__
-            memcpy(data + offset, buf, size_read);
-            offset += size_read;
-        #else
-            memcpy(data + offset, buf, (U32)size_read);
-            offset += (U32)size_read;
-        #endif
-
-    } while (data_end == 0);
+        memcpy(data + offset, buf, size_read);
+        offset += size_read;
+    } while (!data_end);
 
     /* Terminating with an extra null byte doesn't hurt binary data
      * because the recorded length is still right. */
@@ -1033,7 +998,7 @@ dbd_describe(sth, imp_sth)
     imp_sth->done_desc = 1;
 
     /* describe the statement and allocate bufferspace */
-    Newz(42, imp_sth->fbh, DBIc_NUM_FIELDS(imp_sth), imp_fbh_t);
+    Newxz(imp_sth->fbh, DBIc_NUM_FIELDS(imp_sth), imp_fbh_t);
     for (i = 0; i < sqlda->sqld; i++)
     {
         imp_fbh_t *fbh = &imp_sth->fbh[i];
@@ -1155,7 +1120,7 @@ dbd_describe(sth, imp_sth)
                 /* Set up dbd_get_handler to read the data, having it passed
                  * fbh so it knows where to store things and can give back
                  * some status info. */
-                Newz(42, hdlr, 1, IISQLHDLR);
+                Newxz(hdlr, 1, IISQLHDLR);
                 hdlr->sqlarg = (char *)fbh;
                 hdlr->sqlhdlr = dbd_get_handler;
 
@@ -1820,7 +1785,6 @@ dbd_st_destroy(sth, imp_sth)
     imp_sth_t *imp_sth;
 {
     int i;
-    D_imp_dbh_from_sth;
 
     if (dbis->debug >= 2)
         PerlIO_printf(DBILOGFP,"DBD::Ingres::dbd_st_destroy(%s)\n",
@@ -2079,8 +2043,10 @@ dbd_st_FETCH_attrib(sth, imp_sth, keysv)
                 len = imp_sth->fbh[i].origlen;
                 break;
             default:        /* oh dear! */
+                len = -1;
                 break;
             }
+
             if (len > 0)
                 av_store(av, i, newSViv((IV)len));
             else
