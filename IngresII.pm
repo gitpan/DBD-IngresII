@@ -5,7 +5,7 @@
 #   You may distribute under the terms of either the GNU General Public
 #   License or the Artistic License, as specified in the Perl README file.
 
-require 5.008_008;
+require 5.008_004;
 
 =head1 NAME
 
@@ -40,7 +40,7 @@ DBD::IngresII - DBI driver for Actian Ingres and Actian Vectorwise RDBMS
 
     our @ISA = qw(DynaLoader);
 
-    our $VERSION = '0.93';
+    our $VERSION = '0.94';
 
     bootstrap DBD::IngresII $VERSION;
 
@@ -1321,6 +1321,10 @@ Automatic installation with CPAN.
 =head1 SUCCESSFULLY TESTED PLATFORMS
 
 =over 4
+
+=item*
+
+Ingres 10S Enterprise Build 126 + Solaris 10 + gcc on x86
 
 =item *
 

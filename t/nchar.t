@@ -78,6 +78,9 @@ my $dbname = get_dbname();
 unless (defined $dbname) {
     plan skip_all => 'DBI_DBNAME and DBI_DSN aren\'t present';
 }
+elsif (5.010_000 > $]) {
+    plan skip_all => 'This test would fail in perl 5.8.x';
+}
 else {
     unless ($ENV{TEST_NCHAR} || $ENV{DBI_TEST_NCHAR}) {
         plan skip_all => 'DBI_TEST_NCHAR isn\'t present';

@@ -396,6 +396,8 @@ dbd_db_login(dbh, imp_dbh, dbname, user, pass)
     imp_dbh->ing_rollback = 0;
     imp_dbh->ing_enable_utf8 = 0;
     imp_dbh->ing_empty_isnull  = 0;
+    imp_dbh->ing_long_chunk_size = 65536;
+    imp_dbh->ing_long_use_stack = 1;
 
     return 1;
 }
@@ -599,7 +601,7 @@ dbd_db_STORE_attrib(dbh, imp_dbh, keysv, valuesv)
     int on = SvTRUE(valuesv);
 
     set_session(dbh);
-    if (kl==10 && strEQ(key, "AutoCommit"))
+    if ((kl == 10) && strEQ(key, "AutoCommit"))
     {
         EXEC SQL BEGIN DECLARE SECTION;
             int transaction_state, autocommit_state;
@@ -654,12 +656,29 @@ dbd_db_STORE_attrib(dbh, imp_dbh, keysv, valuesv)
 
         DBIc_set(imp_dbh, DBIcf_AutoCommit, on);
     }
-    else if (kl==12 && strEQ(key, "ing_rollback"))
+    else if ((kl == 19) && strEQ(key, "ing_long_chunk_size"))
+    {
+        if (SvIOK(valuesv))
+        {
+            IV int_value = SvIV(valuesv);
+            
+            /* this check makes sense on 64-bit platforms */
+            if (int_value > (IV)INT_MAX)
+                return FALSE;
+
+            imp_dbh->ing_long_chunk_size = int_value;
+        }
+        else
+            return FALSE;
+    }
+    else if ((kl == 12) && strEQ(key, "ing_rollback"))
         imp_dbh->ing_rollback = on;
-    else if (kl==15 && strEQ(key, "ing_enable_utf8"))
+    else if ((kl == 15) && strEQ(key, "ing_enable_utf8"))
         imp_dbh->ing_enable_utf8 = on;
-    else if (kl==16 && strEQ(key, "ing_empty_isnull"))
+    else if ((kl == 16) && strEQ(key, "ing_empty_isnull"))
         imp_dbh->ing_empty_isnull = on;
+    else if ((kl == 18) && strEQ(key, "ing_long_use_stack"))
+        imp_dbh->ing_long_use_stack = on;
     else
         return FALSE;
 
@@ -704,6 +723,10 @@ dbd_db_FETCH_attrib(dbh, imp_dbh, keysv)
         retsv = imp_dbh->ing_enable_utf8 ? &PL_sv_yes : &PL_sv_no;
     else if (kl==16 && strEQ(key, "ing_empty_isnull"))
         retsv = imp_dbh->ing_empty_isnull ? &PL_sv_yes : &PL_sv_no;
+    else if ((kl == 18) && strEQ(key, "ing_long_use_stack"))
+        retsv = imp_dbh->ing_long_use_stack ? &PL_sv_yes : &PL_sv_no;
+    else if ((kl == 19) && strEQ(key, "ing_long_chunk_size"))
+        retsv = newSViv(imp_dbh->ing_long_chunk_size);
 
     if (!retsv)
         return Nullsv;
@@ -832,18 +855,34 @@ dbd_get_handler(fbh)
     EXEC SQL BEGIN DECLARE SECTION;
         int data_end;
         int size_read;
-        char buf[HANDLER_READ_SIZE];
-        int max_to_read = sizeof(buf);
+        char *buf;
+        int max_to_read;
     EXEC SQL END DECLARE SECTION;
     
     unsigned long trunc_len;
-    int offset, data_len;
+    int offset, data_len, used_heap = 0;
     char *data;
     D_imp_sth(fbh->sth);
+    D_imp_dbh_from_sth;
 
     /* We allocate memory as needed to hold the data, in chunks of
      * HANDLER_READ_SIZE length.  We never read more than trunc_len
      * bytes */
+    
+    max_to_read = imp_dbh->ing_long_chunk_size;
+
+    if ((max_to_read > 65536) ||
+        !imp_dbh->ing_long_use_stack)
+    {
+        /* heap */
+        Newx(buf, max_to_read, char);
+        ++used_heap;
+    }
+    else
+    {
+        /* stack */
+        ING_STACK_ALLOC(buf, max_to_read);
+    }
 
     trunc_len = DBIc_LongReadLen(imp_sth);
 
@@ -890,10 +929,6 @@ dbd_get_handler(fbh)
             data = SvPVX(fbh->sv);
             data_len = offset + size_read + 1;
             
-            /* We probably should expose a setting to allow user-tunable
-             * sizes for extending the memory alloc by.  Perhaps a
-             * $dbh->{LongChunkSize} or similar. */
-  
             Renew(data, data_len, char);
             SvPV_set(fbh->sv, data);
             SvLEN_set(fbh->sv, data_len);
@@ -914,6 +949,9 @@ dbd_get_handler(fbh)
         SvOK_off(fbh->sv);
         fbh->indic = -1;
     }
+
+    if (!ING_REAL_STACK_ALLOC || used_heap)
+        Safefree(buf);
 
     /* The return value from the datahandler is ignored by Ingres. */
     return 0;

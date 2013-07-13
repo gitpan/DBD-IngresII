@@ -19,6 +19,7 @@
 
     #include <DBIXS.h>              /* installed by the DBI module  */
     #include <dbd_xsh.h>            /* ditto  */
+    #include <limits.h>
 
     #ifdef _WIN32
         #include <windows.h>
@@ -37,7 +38,7 @@
         #define IISQ_DEC_TYPE -9999
     #endif
 
-    #define HANDLER_READ_SIZE  64 * 1024
+    #define DEFAULT_CHUNK_SIZE 64 * 1024
 
     typedef struct imp_fbh_st imp_fbh_t;
 
@@ -48,14 +49,20 @@
 
     /* Define dbh implementor data structure */
     struct imp_dbh_st {
-        dbih_dbc_t com;             /* MUST be first element in structure   */
-        int        session;         /* session id for this connection */
-        int        trans_no;        /* transaction sequence number, is
-                                     * incremented by 1 at every commit/
-                                     * rollback */
-        int       ing_rollback;     /* Rollsback on change of autocommit */
-        int       ing_enable_utf8;  /* automatic UTF-8 upgrading */
-        int       ing_empty_isnull; /* Treat empty values as NULL */
+        dbih_dbc_t com;                /* MUST be first element in structure   */
+        int        session;            /* session id for this connection */
+        int        trans_no;           /* transaction sequence number, is
+                                        * incremented by 1 at every commit/
+                                        * rollback */
+        int       ing_rollback;        /* Rollsback on change of autocommit */
+        int       ing_enable_utf8;     /* automatic UTF-8 upgrading */
+        int       ing_empty_isnull;    /* Treat empty values as NULL */
+        int       ing_long_chunk_size; /* size of LONG read chunk,
+                                        * if bigger than 65536 then we
+                                        * will use heap instad of stack,
+                                        * ignoring ing_long_use_stack */
+        int       ing_long_use_stack;  /* use stack or heap for LONG read
+                                        * chunks? */
     };
 
     /* Define sth implementor data structure */
@@ -92,6 +99,32 @@
     /* DBD::Ingres extensions */
     SV*     dbd_db_get_dbevent _((SV *dbh, imp_dbh_t *imp_dbh, SV *wait));
 
+    /* new alocators for legacy perl versions (5.8.x) */
+    #if !defined(Newx)
+        #define Newx(pointer, number, type) Newz(0, pointer, number, type)
+    #endif
+
+    #if !defined(Newxz)
+        #define Newxz(pointer, number, type) Newz(0, pointer, number, type)
+    #endif
+
+    #if !defined(Newxc)
+        #define Newxc(pointer, number, type, cast) Newc(0, pointer, number, type, cast)
+    #endif
+
+    /* try to find stack allocator, with fallback to Newx() */
+    #if defined(_MSC_VER) /* visual c++ */
+        #include <malloc.h>
+
+        #define ING_REAL_STACK_ALLOC 1
+        #define ING_STACK_ALLOC(buf, size) (buf = _alloca(size))
+    #elif defined(__GNUC__) /* gcc */
+        #define ING_REAL_STACK_ALLOC 1
+        #define ING_STACK_ALLOC(buf, size) (buf = __builtin_alloca(size))
+    #else /* other */
+        #define ING_REAL_STACK_ALLOC 0
+        #define ING_STACK_ALLOC(buf, size) (Newx(buf, size, char))
+    #endif 
 
     #ifdef xxyyxxyyxxyyxx_ht
         #define dbd_db_get_dbevent      ing_db_get_dbevent

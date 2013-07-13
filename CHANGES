@@ -1,3 +1,8 @@
+v0.94     2013.07.13
+ - Now it is possible to specify LONG read chunk size, and suggest whether 
+   chunks should be stored in stack or heap (VERY EXPERIMENTAL FEATURE)
+ - Defined Newx() and friends for older perl versions
+ - Now minimum supported perl version is 5.8.4 (it is bundled with Solaris 10)
 v0.93     2013.07.10
  - Now we're using Newxz() instead of deprecated Newz()
  - Fixed potential buffer overflow in dbd_st_FETCH_attrib()

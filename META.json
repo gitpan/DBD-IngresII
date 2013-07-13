@@ -40,8 +40,8 @@
    "release_status" : "stable",
    "resources" : {
       "repository" : {
-         "url" : "http://chiselapp.com/user/xenu/repository/dbd-ingresii"
+         "url" : "http://code.xenu.tk/repos.cgi/dbd-ingresii"
       }
    },
-   "version" : "0.93"
+   "version" : "0.94"
 }

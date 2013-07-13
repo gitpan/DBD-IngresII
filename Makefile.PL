@@ -5,7 +5,7 @@
 # You may distribute under the terms of either the GNU General Public
 # License or the Artistic License, as specified in the Perl README file.
 
-require 5.008_008;
+require 5.008_004;
 
 use strict;
 use warnings;
@@ -45,7 +45,7 @@ my %opts = (
     OBJECT        => 'IngresII$(OBJ_EXT) dbdimp$(OBJ_EXT)',
     META_MERGE    => {
          resources => {
-             repository => 'http://chiselapp.com/user/xenu/repository/dbd-ingresii'
+             repository => 'http://code.xenu.tk/repos.cgi/dbd-ingresii'
          }
     },
     clean         => {
