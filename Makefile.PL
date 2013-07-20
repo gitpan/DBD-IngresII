@@ -41,6 +41,7 @@ my %opts = (
     },
     LINKTYPE      => 'dynamic',
     AUTHOR        => 'Henrik Tougaard (htoug@cpan.org)',
+    LICENSE       => 'perl',
     ABSTRACT_FROM => 'IngresII.pm',
     OBJECT        => 'IngresII$(OBJ_EXT) dbdimp$(OBJ_EXT)',
     META_MERGE    => {

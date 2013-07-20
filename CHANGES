@@ -1,3 +1,5 @@
+v0.95     2013.07.17
+ - Docs fixes
 v0.94     2013.07.13
  - Now it is possible to specify LONG read chunk size, and suggest whether 
    chunks should be stored in stack or heap (VERY EXPERIMENTAL FEATURE)

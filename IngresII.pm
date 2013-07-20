@@ -40,7 +40,7 @@ DBD::IngresII - DBI driver for Actian Ingres and Actian Vectorwise RDBMS
 
     our @ISA = qw(DynaLoader);
 
-    our $VERSION = '0.94';
+    our $VERSION = '0.95';
 
     bootstrap DBD::IngresII $VERSION;
 
@@ -1322,7 +1322,7 @@ Automatic installation with CPAN.
 
 =over 4
 
-=item*
+=item *
 
 Ingres 10S Enterprise Build 126 + Solaris 10 + gcc on x86
 
