@@ -1,4 +1,4 @@
-# Copyright (c) 2013 Tomasz Konojacki
+# Copyright (c) 2013, 2014 Tomasz Konojacki
 #
 # You may distribute under the terms of either the GNU General Public
 # License or the Artistic License, as specified in the Perl README file.
@@ -47,7 +47,7 @@ unless (defined $dbname) {
     plan skip_all => 'DBI_DBNAME and DBI_DSN aren\'t present';
 }
 else {
-    plan tests => 48;
+    plan tests => 55;
 }
 
 my $dbh = connect_db($dbname);
@@ -173,7 +173,23 @@ ok($cursor->execute, 'Execute SELECT');
 
 ok(($ar = $cursor->fetchrow_hashref), 'Fetch row');
 
-ok((!defined $ar->{lol}), 'Check whether int equals 0');
+ok((!defined $ar->{lol}), 'Check whether int is NULL');
+
+ok($dbh->do("DELETE FROM $testtable WHERE lol IS NULL"), 'DELETE row');
+
+ok($cursor = $dbh->prepare("INSERT INTO $testtable VALUES (?)"),
+      'Prepare INSERT');
+
+ok($cursor->execute("124"), 'Execute INSERT with PV which looks like number');
+
+ok($cursor = $dbh->prepare("SELECT lol FROM $testtable"),
+      'Prepare SELECT');
+
+ok($cursor->execute, 'Execute SELECT');
+
+ok(($ar = $cursor->fetchrow_hashref), 'Fetch row');
+
+ok($ar->{lol} == 124, 'Check whether int is equal to 124');
 
 ok($cursor = $dbh->prepare("INSERT INTO $testtable VALUES (?)"),
       'Prepare INSERT');

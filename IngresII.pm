@@ -40,7 +40,7 @@ DBD::IngresII - DBI driver for Actian Ingres and Actian Vectorwise RDBMS
 
     our @ISA = qw(DynaLoader);
 
-    our $VERSION = '0.95';
+    our $VERSION = '0.96';
 
     bootstrap DBD::IngresII $VERSION;
 

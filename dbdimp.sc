@@ -1,8 +1,8 @@
 /*                               -*- Mode: C -*-
  *
- * Copyright (c) 1994, 1995  Tim Bunce
- *           (c) 1996, 1997  Henrik Tougaard
- *           (c) 2012, 2013  Tomasz Konojacki
+ * Copyright (c) 1994, 1995 Tim Bunce
+ *           (c) 1996, 1997 Henrik Tougaard
+ *           (c) 2012, 2013, 2014 Tomasz Konojacki
  *
  * You may distribute under the terms of either the GNU General Public
  * License or the Artistic License, as specified in the Perl README file.
@@ -1354,7 +1354,7 @@ dbd_bind_ph (sth, imp_sth, param, value, sql_type, attribs, is_inout, maxlen)
             var->sqllen = sizeof(IV);
             Renew(var->sqldata, var->sqllen, char);
 
-            if (imp_sth->ing_empty_isnull && ((SvPOK(value) && (SvCUR(value) == 0)) || !SvIOK(value)))
+            if (imp_sth->ing_empty_isnull && ((SvPOK(value) && (SvCUR(value) == 0)) || !looks_like_number(value)))
 	        {
 	    	    if (dbis->debug >= 2)
 		            PerlIO_printf(DBILOGFP, "### DBD::Ingres::dbd_bind_ph(%d) NaN using NULL\n", param_no);
@@ -1375,7 +1375,7 @@ dbd_bind_ph (sth, imp_sth, param, value, sql_type, attribs, is_inout, maxlen)
         Renew(var->sqldata, var->sqllen, char);
 
 
-        if (imp_sth->ing_empty_isnull && ((SvPOK(value) && (SvCUR(value) == 0)) || !SvNOK(value)))
+        if (imp_sth->ing_empty_isnull && ((SvPOK(value) && (SvCUR(value) == 0)) || !looks_like_number(value)))
 	    {
 	        if (dbis->debug >= 2)
 	            PerlIO_printf(DBILOGFP, "### DBD::Ingres::dbd_bind_ph(%d) NaN using NULL\n", param_no);
